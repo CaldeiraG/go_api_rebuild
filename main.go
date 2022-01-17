@@ -6,13 +6,10 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/joho/godotenv"
-	"github.com/mvrilo/go-redoc"
 	"github.com/onlytunesradio/go-api-template/src/api"
 	config "github.com/onlytunesradio/go-api-template/src/db"
-	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
 
@@ -43,8 +40,8 @@ func main() {
 	// =================
 	// Declaring Database Connection
 	// =================
-	dsn := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable", DBHost, DBPort, DBUser, DBPass, DBName)
-	config.DB, err = gorm.Open(postgres.Open(dsn), &gorm.Config{
+	dsn := fmt.Sprintf("sqlserver://user=%s:password=%s@host=%s:port=%s?database=dbname=%s", DBUser, DBPass, DBHost, DBPort, DBName)
+	config.DB, err = gorm.Open(sqlserver.Open(dsn), &gorm.Config{
 		// Uncomment the line below to disable the logging Gorm does by default
 		//Logger: logger.Default.LogMode(logger.Silent),
 	})
