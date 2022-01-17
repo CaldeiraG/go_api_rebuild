@@ -1,8 +1,8 @@
 package api
 
 import (
+	"github.com/caldeirag/go-api/src/api/test"
 	"github.com/go-chi/chi/v5"
-	"github.com/onlytunesradio/go-api-template/src/api/test"
 )
 
 func TestRouter() chi.Router {

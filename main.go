@@ -2,14 +2,17 @@ package main
 
 import (
 	"fmt"
+	"github.com/go-chi/chi/v5"
 	"log"
 	"net/http"
 	"os"
 
+	"github.com/caldeirag/go-api/src/api"
+	config "github.com/caldeirag/go-api/src/db"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/joho/godotenv"
-	"github.com/onlytunesradio/go-api-template/src/api"
-	config "github.com/onlytunesradio/go-api-template/src/db"
+	"github.com/mvrilo/go-redoc"
+	"gorm.io/driver/sqlserver"
 	"gorm.io/gorm"
 )
 
