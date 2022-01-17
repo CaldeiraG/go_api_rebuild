@@ -19,8 +19,8 @@ func main() {
 	doc := redoc.Redoc{
 		DocsPath: "/docs",
 		// Change SpecPath && SpecFile to ./static/swagger.json when developing locally!
-		SpecPath:    "/srv/static/swagger.json",
-		SpecFile:    "/srv/static/swagger.json",
+		SpecPath:    "./static/swagger.json",
+		SpecFile:    "./static/swagger.json",
 		Title:       "OnlyTunes API Template",
 		Description: "API Documentation for OnlyTunes API Template",
 	}
