@@ -56,9 +56,9 @@ func main() {
 	// =================
 	r := chi.NewRouter()
 	// Uncomment these during development / debugging
-	//r.Use(middleware.Logger)
-	//r.Use(middleware.RealIP)
-	//r.Use(middleware.RequestID)
+	r.Use(middleware.Logger)
+	r.Use(middleware.RealIP)
+	r.Use(middleware.RequestID)
 	r.Use(middleware.Recoverer)
 	r.Use(middleware.CleanPath)
 

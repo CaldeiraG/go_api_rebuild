@@ -8,14 +8,14 @@ import (
 )
 
 type ScheduleStruct struct {
-	currentWeek int
-	shift1      int
-	shift2      int
-	shift3      int
+	CurrentWeek int
+	Shift1      int
+	Shift2      int
+	Shift3      int
 }
 
 func Get(w http.ResponseWriter, r *http.Request) {
-	var schedule ScheduleStruct
+	schedule := ScheduleStruct{}
 	lineID := chi.URLParam(r, "line_id")
 	DBRes := config.DB.Raw("select *\nfrom \n(\n\tselect schedule,shift,datepart(ww,getdate()) as cur_week\n\tfrom TESTEProd.dbo.weekly_sched WS\n\tinner join TESTEProd.dbo.lines L on L.id = WS.line_id\n\tinner join TESTEProd.dbo.areas A on L.area_id = A.id\n\twhere line_id in (?) and timestamp = CAST(GETDATE() as DATE)\n) src\npivot\n(\n\tsum(schedule)\n\tfor shift in ([1], [2], [3])\n) piv", lineID).Scan(&schedule)
 
