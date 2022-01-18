@@ -44,7 +44,7 @@ func main() {
 	// =================
 	// Declaring Database Connection
 	// =================
-	dsn := fmt.Sprintf("sqlserver://%s:%s@%s:%s?database=%s&encrypt=DISABLE", DBUser, DBPass, DBHost, DBPort, DBName)
+	dsn := fmt.Sprintf("sqlserver://%s:%s@%s:%s?database=%s", DBUser, DBPass, DBHost, DBPort, DBName)
 	config.DB, err = gorm.Open(sqlserver.Open(dsn), &gorm.Config{
 		// Uncomment the line below to disable the logging Gorm does by default
 		//Logger: logger.Default.LogMode(logger.Silent),
