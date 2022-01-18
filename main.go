@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"github.com/go-chi/chi/v5"
+	"github.com/mvrilo/go-redoc"
 	"log"
 	"net/http"
 	"os"
@@ -11,7 +12,6 @@ import (
 	config "github.com/caldeirag/go-api/src/db"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/joho/godotenv"
-	"github.com/mvrilo/go-redoc"
 	"gorm.io/driver/sqlserver"
 	"gorm.io/gorm"
 )
@@ -43,7 +43,7 @@ func main() {
 	// =================
 	// Declaring Database Connection
 	// =================
-	dsn := fmt.Sprintf("sqlserver://user=%s:password=%s@host=%s:port=%s?database=dbname=%s", DBUser, DBPass, DBHost, DBPort, DBName)
+	dsn := fmt.Sprintf("sqlserver://%s:%s@%s:%s?database=%s&encrypt=DISABLE", DBUser, DBPass, DBHost, DBPort, DBName)
 	config.DB, err = gorm.Open(sqlserver.Open(dsn), &gorm.Config{
 		// Uncomment the line below to disable the logging Gorm does by default
 		//Logger: logger.Default.LogMode(logger.Silent),

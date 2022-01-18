@@ -11,7 +11,7 @@ func TestRouter() chi.Router {
 	testRoute := chi.NewRouter()
 
 	// Set up sub-routes
-	testRoute.Get("/get", test.Get)
+	testRoute.Get("/get/{line_id}", test.Get)
 	testRoute.Post("/post", test.Post)
 	testRoute.Delete("/delete", test.Delete)
 
