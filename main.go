@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/go-chi/chi/v5"
 	"github.com/mvrilo/go-redoc"
+	"gorm.io/gorm/logger"
 	"log"
 	"net/http"
 	"os"
@@ -47,6 +48,7 @@ func main() {
 	config.DB, err = gorm.Open(sqlserver.Open(dsn), &gorm.Config{
 		// Uncomment the line below to disable the logging Gorm does by default
 		//Logger: logger.Default.LogMode(logger.Silent),
+		Logger: logger.Default.LogMode(logger.Info),
 	})
 	if err != nil {
 		log.Printf("Error connecting to the database: ERR: %v", err)
