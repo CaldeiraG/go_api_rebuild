@@ -1,20 +1,21 @@
 package api
 
 import (
-	"github.com/caldeirag/go-api/src/api/test"
+	"github.com/caldeirag/go-api/src/api/schedule"
 	"github.com/go-chi/chi/v5"
 )
 
-func TestRouter() chi.Router {
+func ScheduleRouter() chi.Router {
 
 	// New Chi SubRouter
-	testRoute := chi.NewRouter()
+	scheduleRoute := chi.NewRouter()
 
 	// Set up sub-routes
-	testRoute.Get("/get/{line_id}", test.Get)
-	testRoute.Post("/post", test.Post)
-	testRoute.Delete("/delete", test.Delete)
+	scheduleRoute.Get("/shift/{line_id}", schedule.Shift)
+	scheduleRoute.Get("/now/{line_id}", schedule.Now)
+	scheduleRoute.Post("/post", schedule.Post)
+	scheduleRoute.Delete("/delete", schedule.Delete)
 
 	// Return the Sub-Route back to the main API Router in main.go
-	return testRoute
+	return scheduleRoute
 }

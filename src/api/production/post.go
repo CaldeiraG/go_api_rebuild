@@ -1,4 +1,4 @@
-package test
+package schedule
 
 import "net/http"
 

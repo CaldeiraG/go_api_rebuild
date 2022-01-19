@@ -4,4 +4,4 @@ import (
 	"database/sql"
 )
 
-var DB *sql.DB
+var DB2 *sql.DB
