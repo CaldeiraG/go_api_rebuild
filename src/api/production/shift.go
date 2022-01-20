@@ -1,4 +1,4 @@
-package schedule
+package production
 
 import (
 	"context"
@@ -12,11 +12,13 @@ import (
 	"time"
 )
 
-type ScheduleStruct struct {
-	CurrentWeek int
-	Shift1      int
-	Shift2      int
-	Shift3      int
+type productionStruct struct {
+	Prod  int
+	Model string
+}
+
+type modelStruct struct {
+	Model string
 }
 
 /*type inTime struct {
@@ -25,23 +27,35 @@ type ScheduleStruct struct {
 	check string
 }*/
 
-const sqlSchedule = `select piv.cur_week as 'CurrentWeek', piv.[1] as 'Shift1', piv.[2] as 'Shift2', piv.[3] as 'Shift3' from 
-					(select schedule as 'schedule',shift as 'shift',datepart(ww,getdate()) as 'cur_week'
-					from TESTEProd.dbo.weekly_sched WS
-
-					where line_id = @line_id and timestamp = CAST(GETDATE() as DATE) 
-					) as src 
-					pivot 
-					(
-							sum(schedule) for shift in ([1], [2], [3])
-					) as piv`
-
-func Shift(w http.ResponseWriter, r *http.Request) {
+func Production(w http.ResponseWriter, r *http.Request) {
 	ctx := context.Background()
-	schedule := ScheduleStruct{}
+	production := productionStruct{}
+	model := modelStruct{}
 	lineID := StringToInt(chi.URLParam(r, "line_id"))
 
-	query, err := config.DB.Prepare(sqlSchedule)
+	var query *sql.Stmt
+	var err error
+
+	switch lineID {
+	case 44:
+		query, err = config.DB.Prepare(config.SqlVS14)
+	case 47:
+		query, err = config.DB.Prepare(config.SqlGEN3)
+	case 53:
+		query, err = config.DB2.Prepare(config.SqlInv3)
+	case 52:
+		query, err = config.DB2.Prepare(config.SqlYF)
+	case 90:
+		query, err = config.DB2.Prepare(config.SqlR744)
+	case 83:
+		query, err = config.DB2.Prepare(config.SqlInv4)
+	case 85:
+		query, err = config.DB2.Prepare(config.SqlInv42)
+	case 91:
+		query, err = config.DB2.Prepare(config.SqlInv43)
+	}
+
+	//query, err := config.DB.Prepare(sqlSchedule)
 	if err != nil {
 		w.WriteHeader(500)
 		w.Write([]byte("Something Went Wrong!"))
@@ -50,85 +64,90 @@ func Shift(w http.ResponseWriter, r *http.Request) {
 	}
 
 	defer query.Close()
-
-	newRecord := query.QueryRowContext(ctx, sql.Named("line_id", lineID))
-
-	err = newRecord.Scan(&schedule.CurrentWeek, &schedule.Shift1, &schedule.Shift2, &schedule.Shift3)
-	if err != nil {
-		w.WriteHeader(500)
-		w.Write([]byte("Something Went Wrong!"))
-		fmt.Printf("Error: %v\n", err)
-		return
-	}
-
-	w.WriteHeader(200)
-	w.Header().Set("Content-Type", "application/json")
-
-	errJSON := json.NewEncoder(w).Encode(schedule)
-	if errJSON != nil {
-		w.WriteHeader(500)
-		w.Write([]byte("Something Went Wrong!"))
-		return
-	}
-}
-
-func Now(w http.ResponseWriter, r *http.Request) {
-	ctx := context.Background()
-	schedule := ScheduleStruct{}
-	lineID := StringToInt(chi.URLParam(r, "line_id"))
-
-	query, err := config.DB.Prepare(sqlSchedule)
-	if err != nil {
-		w.WriteHeader(500)
-		w.Write([]byte("Something Went Wrong!"))
-		fmt.Printf("Error: %v\n", err)
-		return
-	}
-
-	defer query.Close()
-
-	newRecord := query.QueryRowContext(ctx, sql.Named("line_id", lineID))
-
-	err = newRecord.Scan(&schedule.CurrentWeek, &schedule.Shift1, &schedule.Shift2, &schedule.Shift3)
-	if err != nil {
-		w.WriteHeader(500)
-		w.Write([]byte("Something Went Wrong!"))
-		fmt.Printf("Error: %v\n", err)
-		return
-	}
-
-	w.WriteHeader(200)
-	w.Header().Set("Content-Type", "application/json")
 
 	var shift1 = "08:00"
 	var shift2 = "16:30"
 	var shift3 = "01:00"
 
-	var shift1Now = 0
-	var shift2Now = 0
-	var shift3Now = 0
-
 	currentTime := time.Now()
 
-	if currentTime.Format("15:04") >= "08:00" && currentTime.Format("15:04") <= "16:30" {
-		oldTime := ConvertTimeCurrentDate(shift1)
-		diff := currentTime.Sub(oldTime)
-		shift1Now = int(diff.Minutes()) * schedule.Shift1 / 510
-	} else if currentTime.Format("15:04") >= "16:30" && currentTime.Format("15:04") <= "01:00" {
-		oldTime := ConvertTimeCurrentDate(shift2)
-		diff := currentTime.Sub(oldTime)
-		shift2Now = int(diff.Minutes()) * schedule.Shift2 / 510
-	} else if currentTime.Format("15:04") >= "01:00" && currentTime.Format("15:04") <= "08:00" {
-		oldTime := ConvertTimeCurrentDate(shift3)
-		diff := currentTime.Sub(oldTime)
-		shift3Now = int(diff.Minutes()) * schedule.Shift3 / 420
+	var newRecord *sql.Row
+
+	if currentTime.Format("15:04") >= "08:00" && currentTime.Format("15:04") < "16:30" {
+		dataInicial := ConvertTimeCurrentDate(shift1)
+		dataFinal := ConvertTimeCurrentDate(shift2)
+		newRecord = query.QueryRowContext(ctx, sql.Named("dataInicial", dataInicial), sql.Named("dataFinal", dataFinal))
+	} else if currentTime.Format("15:04") >= "16:30" && currentTime.Format("15:04") < "00:00" {
+		dataInicial := ConvertTimeCurrentDate(shift2)
+		dataFinal := ConvertTimeCurrentDate("00:00")
+		newRecord = query.QueryRowContext(ctx, sql.Named("dataInicial", dataInicial), sql.Named("dataFinal", dataFinal))
+	} else if currentTime.Format("15:04") >= "00:00" && currentTime.Format("15:04") < "01:00" {
+		dataInicial := ConvertTimeCurrentDate("00:00").AddDate(0, 0, -1)
+		dataFinal := ConvertTimeCurrentDate(shift3)
+		newRecord = query.QueryRowContext(ctx, sql.Named("dataInicial", dataInicial), sql.Named("dataFinal", dataFinal))
+	} else if currentTime.Format("15:04") >= "01:00" && currentTime.Format("15:04") < "08:00" {
+		dataInicial := ConvertTimeCurrentDate(shift3)
+		dataFinal := ConvertTimeCurrentDate(shift1)
+		newRecord = query.QueryRowContext(ctx, sql.Named("dataInicial", dataInicial), sql.Named("dataFinal", dataFinal))
 	}
 
-	schedule.Shift1 = shift1Now
-	schedule.Shift2 = shift2Now
-	schedule.Shift3 = shift3Now
+	err = newRecord.Scan(&production.Prod, &production.Model)
+	if err != nil {
+		w.WriteHeader(500)
+		w.Write([]byte("Something Went Wrong!"))
+		fmt.Printf("Error: %v\n", err)
+		return
+	}
 
-	errJSON := json.NewEncoder(w).Encode(schedule)
+	queryModel, err := config.DB.Prepare(config.SqlmodelCheck)
+	if err != nil {
+		w.WriteHeader(500)
+		w.Write([]byte("Something Went Wrong!"))
+		fmt.Printf("Error: %v\n", err)
+		return
+	}
+
+	defer queryModel.Close()
+
+	fmt.Printf("%v\n", production.Model)
+
+	var newRecord2 *sql.Row
+
+	switch lineID {
+	case 47: //Gen3
+		newRecord2 = queryModel.QueryRowContext(ctx, sql.Named("model", production.Model), sql.Named("line_id", lineID))
+	case 53: //Inv3
+		newRecord2 = queryModel.QueryRowContext(ctx, sql.Named("model", production.Model), sql.Named("line_id", lineID))
+	case 52: //YF
+		newRecord2 = queryModel.QueryRowContext(ctx, sql.Named("model", production.Model), sql.Named("line_id", lineID))
+	case 83: //Inv4
+		newRecord2 = queryModel.QueryRowContext(ctx, sql.Named("model", production.Model), sql.Named("line_id", lineID))
+	case 85: //Inv42
+		newRecord2 = queryModel.QueryRowContext(ctx, sql.Named("model", production.Model), sql.Named("line_id", lineID))
+		//case 91: //Inv43
+		//newRecord2 = queryModel.QueryRowContext(ctx, sql.Named("model", production.Model), sql.Named("line_id", lineID))
+	}
+
+	//newRecord2 := queryModel.QueryRowContext(ctx, sql.Named("model", production.Model), sql.Named("line_id", lineID))
+
+	if newRecord2 != nil {
+		err = newRecord2.Scan(&model.Model)
+		if err != nil {
+			w.WriteHeader(500)
+			w.Write([]byte("Something Went Wrong!"))
+			fmt.Printf("Error: %v\n", err)
+			return
+		}
+	}
+
+	if model.Model != "" {
+		production.Model = model.Model
+	}
+
+	w.WriteHeader(200)
+	w.Header().Set("Content-Type", "application/json")
+
+	errJSON := json.NewEncoder(w).Encode(production)
 	if errJSON != nil {
 		w.WriteHeader(500)
 		w.Write([]byte("Something Went Wrong!"))

@@ -105,6 +105,7 @@ func main() {
 	// Initialize API Routes
 	// =================
 	r.Mount("/schedule", api.ScheduleRouter())
+	r.Mount("/production", api.ProductionRouter())
 	// =================
 	// Initialize API Documentation
 	// =================
