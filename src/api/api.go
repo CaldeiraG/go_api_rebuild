@@ -14,8 +14,8 @@ func ScheduleRouter() chi.Router {
 	// Set up sub-routes
 	scheduleRoute.Get("/shift/{line_id}", schedule.Shift)
 	scheduleRoute.Get("/now/{line_id}", schedule.Now)
-	scheduleRoute.Post("/post", schedule.Post)
-	scheduleRoute.Delete("/delete", schedule.Delete)
+	scheduleRoute.Get("/day/{line_id}", schedule.ShiftDay)
+	scheduleRoute.Get("/yesterday/{line_id}", schedule.ShiftYesterday)
 
 	// Return the Sub-Route back to the main API Router in main.go
 	return scheduleRoute

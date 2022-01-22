@@ -79,7 +79,7 @@ func Production(w http.ResponseWriter, r *http.Request) {
 		newRecord = query.QueryRowContext(ctx, sql.Named("dataInicial", dataInicial), sql.Named("dataFinal", dataFinal))
 	} else if currentTime.Format("15:04") >= "16:30" && currentTime.Format("15:04") < "00:00" {
 		dataInicial := ConvertTimeCurrentDate(shift2)
-		dataFinal := ConvertTimeCurrentDate("00:00")
+		dataFinal := ConvertTimeCurrentDate("00:00").AddDate(0, 0, 1)
 		newRecord = query.QueryRowContext(ctx, sql.Named("dataInicial", dataInicial), sql.Named("dataFinal", dataFinal))
 	} else if currentTime.Format("15:04") >= "00:00" && currentTime.Format("15:04") < "01:00" {
 		dataInicial := ConvertTimeCurrentDate("00:00").AddDate(0, 0, -1)
@@ -108,8 +108,6 @@ func Production(w http.ResponseWriter, r *http.Request) {
 	}
 
 	defer queryModel.Close()
-
-	fmt.Printf("%v\n", production.Model)
 
 	var newRecord2 *sql.Row
 

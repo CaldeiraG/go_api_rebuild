@@ -81,7 +81,7 @@ func Shift(w http.ResponseWriter, r *http.Request) {
 
 	if currentTime.Format("15:04") >= "08:00" && currentTime.Format("15:04") < "16:30" {
 		shiftNow = int(schedule.Shift1)
-	} else if currentTime.Format("15:04") >= "16:30" && currentTime.Format("15:04") < "01:00" {
+	} else if currentTime.Format("15:04") >= "16:30" && currentTime.AddDate(0, 0, -1).Format("15:04") < "01:00" {
 		shiftNow = int(schedule.Shift2)
 	} else if currentTime.Format("15:04") >= "01:00" && currentTime.Format("15:04") < "08:00" {
 		shiftNow = int(schedule.Shift3)
@@ -134,18 +134,18 @@ func Now(w http.ResponseWriter, r *http.Request) {
 
 	currentTime := time.Now()
 
-	if currentTime.Format("15:04") >= "08:00" && currentTime.Format("15:04") <= "16:30" {
+	if currentTime.Format("15:04") >= "08:00" && currentTime.Format("15:04") < "16:30" {
 		oldTime := ConvertTimeCurrentDate(shift1)
 		diff := currentTime.Sub(oldTime)
 		shiftNow = int(diff.Minutes() * schedule.Shift1 / 510)
-	} else if currentTime.Format("15:04") >= "16:30" && currentTime.Format("15:04") <= "01:00" {
+	} else if currentTime.Format("15:04") >= "16:30" && currentTime.AddDate(0, 0, -1).Format("15:04") < "01:00" {
 		oldTime := ConvertTimeCurrentDate(shift2)
 		diff := currentTime.Sub(oldTime)
 		shiftNow = int(diff.Minutes() * schedule.Shift2 / 510)
-	} else if currentTime.Format("15:04") >= "01:00" && currentTime.Format("15:04") <= "08:00" {
+	} else if currentTime.Format("15:04") >= "01:00" && currentTime.Format("15:04") < "08:00" {
 		oldTime := ConvertTimeCurrentDate(shift3)
 		diff := currentTime.Sub(oldTime)
-		shiftNow = int(diff.Minutes() * schedule.Shift3 / 510)
+		shiftNow = int(diff.Minutes() * schedule.Shift3 / 420)
 	}
 
 	scheduleNow.Shift = float64(shiftNow)
