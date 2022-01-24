@@ -138,7 +138,7 @@ func Now(w http.ResponseWriter, r *http.Request) {
 		oldTime := ConvertTimeCurrentDate(shift1)
 		diff := currentTime.Sub(oldTime)
 		shiftNow = int(diff.Minutes() * schedule.Shift1 / 510)
-	} else if currentTime.Format("15:04") >= "16:30" && currentTime.AddDate(0, 0, -1).Format("15:04") < "01:00" {
+	} else if currentTime.Format("15:04") >= "16:30" && currentTime.AddDate(0, 0, 1).Format("15:04") < "01:00" {
 		oldTime := ConvertTimeCurrentDate(shift2)
 		diff := currentTime.Sub(oldTime)
 		shiftNow = int(diff.Minutes() * schedule.Shift2 / 510)

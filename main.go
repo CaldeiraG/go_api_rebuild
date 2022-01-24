@@ -110,7 +110,7 @@ func main() {
 	// Initialize API Documentation
 	// =================
 	// Change the http.Dir to ./static for local development!
-	r.Handle("/static/*", http.StripPrefix("/static", http.FileServer(http.Dir("/srv/static"))))
+	r.Handle("/static/*", http.StripPrefix("/static", http.FileServer(http.Dir("./static"))))
 	r.Handle("/docs", doc.Handler())
 	// =================
 	// Start WebServer

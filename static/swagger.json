@@ -1,68 +1,294 @@
 {
   "info": {
     "version": "1.0.0",
-    "title": "OnlyTunes API Template",
+    "title": "Hanon Systems API",
     "x-logo": {
-      "url": "https://cdn.onlytunes.xyz/OnlyTunesBG.jpeg",
+      "url": "/static/logo.png",
       "backgroundColor": "#FFFFFF",
-      "altText": "OnlyTunes Logo"
+      "altText": "Hanon Systems Logo"
     }
   },
   "paths": {
-    "/test/get": {
+    "/production/now/{line_id}": {
       "get": {
         "tags": [
-          "test"
+          "Production"
         ],
-        "summary": "Get test",
-        "description": "Get test",
-        "operationId": "getTest",
+        "summary": "Get production by shift",
+        "description": "Get production by shift",
+        "operationId": "getProdShift",
+        "parameters": [
+          {
+            "name": "line_id",
+            "in": "path",
+            "description": "Line ID",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
         "responses": {
           "200": {
-            "description": "Example Of Get",
+            "description": "Production by shift",
             "content": {
               "application/json": {
-                "schema": {}
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "Prod": {
+                      "type": "number"
+                    },
+                    "Model": {
+                      "type": "string"
+                    }
+                  }
+                }
               }
             }
           }
         }
       }
     },
-    "/test/post": {
-      "post": {
+    "/production/day/{line_id}": {
+      "get": {
         "tags": [
-          "test"
+          "Production"
         ],
-        "summary": "Post test",
-        "description": "Post test",
-        "operationId": "postTest",
+        "summary": "Get production by day",
+        "description": "Get production by day",
+        "operationId": "getProdDay",
+        "parameters": [
+          {
+            "name": "line_id",
+            "in": "path",
+            "description": "Line ID",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
         "responses": {
           "200": {
-            "description": "Post Message Received",
+            "description": "Production by day",
             "content": {
               "application/json": {
-                "schema": {}
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "Prod": {
+                      "type": "number"
+                    }
+                  }
+                }
               }
             }
           }
         }
       }
     },
-    "/test/delete": {
-      "delete": {
+    "/production/yesterday/{line_id}": {
+      "get": {
         "tags": [
-          "test"
+          "Production"
         ],
-        "summary": "Delete test",
-        "description": "Delete test",
-        "operationId": "deleteTest",
+        "summary": "Get production by yesterday",
+        "description": "Get production by yesterday",
+        "operationId": "getProdYesterday",
+        "parameters": [
+          {
+            "name": "line_id",
+            "in": "path",
+            "description": "Line ID",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
         "responses": {
           "200": {
-            "description": "Item deleted successfully.",
+            "description": "Production by yesterday",
             "content": {
               "application/json": {
-                "schema": {}
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "Prod": {
+                      "type": "number"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/schedule/shift/{line_id}": {
+      "get": {
+        "tags": [
+          "Schedule"
+        ],
+        "summary": "Get schedule by shift",
+        "description": "Get schedule by shift",
+        "operationId": "getScheduleShift",
+        "parameters": [
+          {
+            "name": "line_id",
+            "in": "path",
+            "description": "Line ID",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Schedule by shift",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "CurrentWeek": {
+                      "type": "number"
+                    },
+                    "Shift": {
+                      "type": "number"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/schedule/now/{line_id}": {
+      "get": {
+        "tags": [
+          "Schedule"
+        ],
+        "summary": "Get schedule by now",
+        "description": "Get schedule by now",
+        "operationId": "getScheduleNow",
+        "parameters": [
+          {
+            "name": "line_id",
+            "in": "path",
+            "description": "Line ID",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Schedule by now",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "CurrentWeek": {
+                      "type": "number"
+                    },
+                    "Shift": {
+                      "type": "number"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/schedule/day/{line_id}": {
+      "get": {
+        "tags": [
+          "Schedule"
+        ],
+        "summary": "Get schedule by day",
+        "description": "Get schedule by day",
+        "operationId": "getScheduleDay",
+        "parameters": [
+          {
+            "name": "line_id",
+            "in": "path",
+            "description": "Line ID",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Schedule by day",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "CurrentWeek": {
+                      "type": "number"
+                    },
+                    "DailySchedule": {
+                      "type": "number"
+                    },
+                    "Schedule": {
+                      "type": "number"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },"/schedule/yesterday/{line_id}": {
+      "get": {
+        "tags": [
+          "Schedule"
+        ],
+        "summary": "Get schedule by yesterday",
+        "description": "Get schedule by yesterday",
+        "operationId": "getScheduleYesterday",
+        "parameters": [
+          {
+            "name": "line_id",
+            "in": "path",
+            "description": "Line ID",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Schedule by yesterday",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "CurrentWeek": {
+                      "type": "number"
+                    },
+                    "DailySchedule": {
+                      "type": "number"
+                    },
+                    "Schedule": {
+                      "type": "number"
+                    }
+                  }
+                }
               }
             }
           }
