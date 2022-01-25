@@ -59,7 +59,7 @@ func Production(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		w.WriteHeader(500)
 		w.Write([]byte("Something Went Wrong!"))
-		fmt.Printf("Error: %v\n", err)
+		fmt.Printf("Error preparing statements: %v\n", err)
 		return
 	}
 
@@ -77,7 +77,7 @@ func Production(w http.ResponseWriter, r *http.Request) {
 		dataInicial := ConvertTimeCurrentDate(shift1)
 		dataFinal := ConvertTimeCurrentDate(shift2)
 		newRecord = query.QueryRowContext(ctx, sql.Named("dataInicial", dataInicial), sql.Named("dataFinal", dataFinal))
-	} else if currentTime.Format("15:04") >= "16:30" && currentTime.Format("15:04") < "00:00" {
+	} else if currentTime.Format("15:04") >= "16:30" && currentTime.Format("15:04") <= "23:59" {
 		dataInicial := ConvertTimeCurrentDate(shift2)
 		dataFinal := ConvertTimeCurrentDate("00:00").AddDate(0, 0, 1)
 		newRecord = query.QueryRowContext(ctx, sql.Named("dataInicial", dataInicial), sql.Named("dataFinal", dataFinal))
@@ -95,7 +95,8 @@ func Production(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		w.WriteHeader(500)
 		w.Write([]byte("Something Went Wrong!"))
-		fmt.Printf("Error: %v\n", err)
+		fmt.Printf("Error scanning rows: %v\n", err)
+		production.Prod = 0
 		return
 	}
 
@@ -103,7 +104,7 @@ func Production(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		w.WriteHeader(500)
 		w.Write([]byte("Something Went Wrong!"))
-		fmt.Printf("Error: %v\n", err)
+		fmt.Printf("Error preparing modelCheck query: %v\n", err)
 		return
 	}
 
@@ -133,14 +134,19 @@ func Production(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			w.WriteHeader(500)
 			w.Write([]byte("Something Went Wrong!"))
-			fmt.Printf("Error: %v\n", err)
+			fmt.Printf("Error scanning rows (model): %v\n", err)
 			return
 		}
+
 	}
 
 	if model.Model != "" {
 		production.Model = model.Model
 	}
+
+	/*if *model.Model != "" {
+		production.Model = model.Model
+	}*/
 
 	w.WriteHeader(200)
 	w.Header().Set("Content-Type", "application/json")

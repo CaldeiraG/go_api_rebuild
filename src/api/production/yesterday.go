@@ -12,7 +12,7 @@ import (
 
 type productionYesterdayStruct struct {
 	Prod  int
-	Model string `json:"-"`
+	Model *string `json:"-"`
 }
 
 /*type inTime struct {

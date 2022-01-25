@@ -94,7 +94,7 @@ func ShiftDay(w http.ResponseWriter, r *http.Request) {
 		//fmt.Printf("01:00-08:00: %v\n", shiftNow)
 	} else if currentTime.Format("15:04") > "08:00" {
 		oldTime := ConvertTimeCurrentDate(shift3)
-		diff := currentTime.Sub(oldTime)
+		diff := ConvertTimeCurrentDate(shift1).Sub(oldTime)
 		shiftNow += int(diff.Minutes() * schedule.Shift3 / 420)
 		//fmt.Printf("01:00-08:00: %v\n", shiftNow)
 	}
@@ -106,22 +106,34 @@ func ShiftDay(w http.ResponseWriter, r *http.Request) {
 		//fmt.Printf("08:00-16:30: %v\n", shiftNow)
 	} else if currentTime.Format("15:04") > "16:30" {
 		oldTime := ConvertTimeCurrentDate(shift1)
-		diff := currentTime.Sub(oldTime)
+		diff := ConvertTimeCurrentDate(shift2).Sub(oldTime)
 		shiftNow += int(diff.Minutes() * schedule.Shift1 / 510)
 		//fmt.Printf("08:00-16:30: %v\n", shiftNow)
 	}
 
-	if currentTime.Format("15:04") >= "16:30" && currentTime.AddDate(0, 0, 1).Format("15:04") < "01:00" {
+	if currentTime.Format("15:04") >= "16:30" && currentTime.Format("15:04") <= "23:59" {
 		oldTime := ConvertTimeCurrentDate(shift2)
 		diff := currentTime.Sub(oldTime)
-		shiftNow += int(diff.Minutes() * schedule.Shift2 / 510)
+		shiftNow += int(diff.Minutes() * schedule.Shift2 / 389)
 		//fmt.Printf("16:30-00:00: %v\n", shiftNow)
 	} else if currentTime.Format("15:04") > "16:30" {
 		oldTime := ConvertTimeCurrentDate(shift2)
-		diff := currentTime.Sub(oldTime)
-		shiftNow += int(diff.Minutes() * schedule.Shift2 / 510)
+		diff := ConvertTimeCurrentDate("23:59").Sub(oldTime)
+		shiftNow += int(diff.Minutes() * schedule.Shift2 / 389)
 		//fmt.Printf("16:30-00:00: %v\n", shiftNow)
 	}
+
+	if currentTime.Format("15:04") >= "00:00" && currentTime.Format("15:04") < "01:00" {
+		oldTime := ConvertTimeCurrentDate("00:00")
+		diff := currentTime.Sub(oldTime)
+		shiftNow += int(diff.Minutes() * schedule.Shift2 / 60)
+		//fmt.Printf("16:30-00:00: %v\n", shiftNow)
+	} /*else if currentTime.Format("15:04") > "16:30" {
+		oldTime := ConvertTimeCurrentDate(shift2)
+		diff := ConvertTimeCurrentDate("23:59").Sub(oldTime)
+		shiftNow += int(diff.Minutes() * schedule.Shift2 / 389)
+		//fmt.Printf("16:30-00:00: %v\n", shiftNow)
+	}*/
 	/*oldTime := ConvertTimeCurrentDate("01:00")
 	diff := currentTime.Sub(oldTime)*/
 	/*if schedule.Shift3 > 0 && schedule.Shift2 > 0 && schedule.Shift1 > 0 {
