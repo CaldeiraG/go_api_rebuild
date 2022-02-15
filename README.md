@@ -1,6 +1,4 @@
-Golang API Template 
-
-[![Go Report Card](https://goreportcard.com/badge/github.com/onlytunesradio/go-api-template)](https://goreportcard.com/report/github.com/onlytunesradio/go-api-template) ![GitHub repo size](https://img.shields.io/github/repo-size/OnlyTunesRadio/go-api-template) ![GitHub repo file count](https://img.shields.io/github/directory-file-count/OnlyTunesRadio/go-api-template) 
+# Golang API Template [![wakatime](https://wakatime.com/badge/user/0c2eb4e9-64a3-4002-8eb0-dea543a982e6/project/07229d49-8984-4e3c-a5ee-e99fea0631da.svg)](https://wakatime.com/badge/user/0c2eb4e9-64a3-4002-8eb0-dea543a982e6/project/07229d49-8984-4e3c-a5ee-e99fea0631da) 
 
 ---- 
 This is only a rough template to give you a starting point for your API.
