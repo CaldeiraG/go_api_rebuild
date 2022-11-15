@@ -178,9 +178,9 @@ func StringToInt(s string) int {
 func ConvertTimeCurrentDate(s string) time.Time {
 	oldTime, _ := time.Parse("15:04", s)
 	hour, min, sec := oldTime.Clock()
-	now := time.Now().UTC()
+	now := time.Now()
 	year, month, day := now.Date()
-	oldTime = time.Date(year, month, day, hour, min, sec, 0, time.UTC)
+	oldTime = time.Date(year, month, day, hour, min, sec, 0, time.Local)
 	return oldTime
 }
 

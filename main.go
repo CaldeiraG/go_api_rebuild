@@ -14,6 +14,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"time"
 )
 
 func main() {
@@ -32,6 +33,7 @@ func main() {
 	// =================
 	var DBHost, DBUser, DBPass, DBName, DBPort string
 	var DBHost2, DBUser2, DBPass2, DBName2, DBPort2 string
+	var DBHost3, DBUser3, DBPass3, DBName3, DBPort3 string
 	err := godotenv.Load(".env")
 	if err != nil {
 		log.Printf("Error loading .env file, Using container variables: ERR: %v", err)
@@ -47,6 +49,12 @@ func main() {
 	DBPass2 = os.Getenv("DB_PASS2")
 	DBName2 = os.Getenv("DB_NAME2")
 	DBPort2 = os.Getenv("DB_PORT2")
+
+	DBHost3 = os.Getenv("DB_HOST3")
+	DBUser3 = os.Getenv("DB_USER3")
+	DBPass3 = os.Getenv("DB_PASS3")
+	DBName3 = os.Getenv("DB_NAME3")
+	DBPort3 = os.Getenv("DB_PORT3")
 	// =================
 	// Declaring Database Connection
 	// =================
@@ -70,6 +78,18 @@ func main() {
 	}
 	ctx2 := context.Background()
 	err = config.DB2.PingContext(ctx2)
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+
+	connString3 := fmt.Sprintf("server=%s;user id=%s;password=%s;port=%s;database=%s;encrypt=disable", DBHost3, DBUser3, DBPass3, DBPort3, DBName3)
+
+	config.DB3, err = sql.Open("sqlserver", connString3)
+	if err != nil {
+		log.Fatal("Error creating connection pool: ", err.Error())
+	}
+	ctx3 := context.Background()
+	err = config.DB3.PingContext(ctx3)
 	if err != nil {
 		log.Fatal(err.Error())
 	}
@@ -115,7 +135,9 @@ func main() {
 	// =================
 	// Start WebServer
 	// =================
+	currentTime := time.Now()
 	fmt.Printf("Starting Server on port 4000\n")
+	fmt.Printf("Time: %s\n", currentTime.Format("2006-01-02 15:04:05"))
 	err = http.ListenAndServe(":4000", r)
 	if err != nil {
 		log.Fatal(err)

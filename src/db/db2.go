@@ -22,7 +22,7 @@ const SqlR744 = `select COUNT(MINDEX) as prod, 'R744' as model
 					 FROM [R744_Clone].[dbo].[LineD]
 					 where (REJECTED IS NULL OR REJECTED = 0) and WRITE_STATION = '670' and TIME_STAMP >= @dataInicial and TIME_STAMP <= @dataFinal`
 
-const SqlYF = `select COUNT(MINDEX) as prod, COALESCE(MAX(RIGHT(LEFT(RTRIM(END_ITEM_PART_NUMBER), 9),4)),'') as model
+const SqlYF = `select COUNT(MINDEX) as prod, COALESCE(MAX(RIGHT(LEFT(RTRIM(END_ITEM_PART_NUMBER), 10),5)),'') as model
 				 FROM [YF_Clone].[dbo].[LineD]
 				 where REJECTED = 0 and WRITE_STATION = 990 and TIME_STAMP >= @dataInicial and TIME_STAMP <= @dataFinal`
 

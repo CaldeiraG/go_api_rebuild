@@ -73,7 +73,7 @@ func ProductionDay(w http.ResponseWriter, r *http.Request) {
 		newRecord = query.QueryRowContext(ctx, sql.Named("dataInicial", dataInicial), sql.Named("dataFinal", dataFinal))
 	} else {
 		dataInicial := ConvertTimeCurrentDate("01:00")
-		dataFinal := currentTime
+		dataFinal := currentTime.Add(time.Hour * 1)
 		newRecord = query.QueryRowContext(ctx, sql.Named("dataInicial", dataInicial), sql.Named("dataFinal", dataFinal))
 	}
 	err = newRecord.Scan(&production.Prod, &production.Model)

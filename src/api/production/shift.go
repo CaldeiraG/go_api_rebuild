@@ -100,7 +100,7 @@ func Production(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	queryModel, err := config.DB.Prepare(config.SqlmodelCheck)
+	queryModel, err := config.DB2.Prepare(config.SqlmodelCheck)
 	if err != nil {
 		w.WriteHeader(500)
 		w.Write([]byte("Something Went Wrong!"))
