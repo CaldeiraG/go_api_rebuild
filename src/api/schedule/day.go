@@ -11,14 +11,14 @@ import (
 	"time"
 )
 
-type ScheduleDayStruct struct {
+type DayStruct struct {
 	CurrentWeek int
 	Shift1      float64
 	Shift2      float64
 	Shift3      float64
 }
 
-type ScheduleDayTestStruct struct {
+type DayTestStruct struct {
 	CurrentWeek   int
 	DailySchedule float64
 	Schedule      float64
@@ -43,8 +43,8 @@ const sqlScheduleDay = `select piv.cur_week as 'CurrentWeek', ISNULL(piv.[1],0) 
 
 func ShiftDay(w http.ResponseWriter, r *http.Request) {
 	ctx := context.Background()
-	schedule := ScheduleDayStruct{}
-	scheduleTest := ScheduleDayTestStruct{}
+	schedule := DayStruct{}
+	scheduleTest := DayTestStruct{}
 	lineID := StringToInt(chi.URLParam(r, "line_id"))
 
 	query, err := config.DB.Prepare(sqlSchedule)
@@ -80,77 +80,47 @@ func ShiftDay(w http.ResponseWriter, r *http.Request) {
 	var shift2 = "16:30"
 	var shift3 = "01:00"
 
-	/*	if currentTime.Format("15:04") >= "00:00" && currentTime.Format("15:04") < "01:00" {
-		oldTime := ConvertTimeCurrentDate("00:00")
-		diff := currentTime.Sub(oldTime)
-		shiftNow += int(diff.Minutes() * DailySchedule / 60)
-		fmt.Printf("00:00-01:00: %v\n", shiftNow)
-	}*/
-
 	if currentTime.Format("15:04") >= "01:00" && currentTime.Format("15:04") < "08:00" {
 		oldTime := ConvertTimeCurrentDate(shift3)
 		diff := currentTime.Sub(oldTime)
 		shiftNow += int(diff.Minutes() * schedule.Shift3 / 420)
-		//fmt.Printf("01:00-08:00: %v\n", shiftNow)
+		//fmt.Printf("01:00-08:00: %v\n", shiftNow) ------ debug purposes -----------
 	} else if currentTime.Format("15:04") > "08:00" {
 		oldTime := ConvertTimeCurrentDate(shift3)
 		diff := ConvertTimeCurrentDate(shift1).Sub(oldTime)
 		shiftNow += int(diff.Minutes() * schedule.Shift3 / 420)
-		//fmt.Printf("01:00-08:00: %v\n", shiftNow)
+		//fmt.Printf("01:00-08:00: %v\n", shiftNow) ------ debug purposes -----------
 	}
 
 	if currentTime.Format("15:04") >= "08:00" && currentTime.Format("15:04") < "16:30" {
 		oldTime := ConvertTimeCurrentDate(shift1)
 		diff := currentTime.Sub(oldTime)
 		shiftNow += int(diff.Minutes() * schedule.Shift1 / 510)
-		//fmt.Printf("08:00-16:30: %v\n", shiftNow)
+		//fmt.Printf("08:00-16:30: %v\n", shiftNow)  ------ debug purposes -----------
 	} else if currentTime.Format("15:04") > "16:30" {
 		oldTime := ConvertTimeCurrentDate(shift1)
 		diff := ConvertTimeCurrentDate(shift2).Sub(oldTime)
 		shiftNow += int(diff.Minutes() * schedule.Shift1 / 510)
-		//fmt.Printf("08:00-16:30: %v\n", shiftNow)
+		//fmt.Printf("08:00-16:30: %v\n", shiftNow) ------ debug purposes -----------
 	}
 
 	if currentTime.Format("15:04") >= "16:30" && currentTime.Format("15:04") <= "23:59" {
 		oldTime := ConvertTimeCurrentDate(shift2)
 		diff := currentTime.Sub(oldTime)
 		shiftNow += int(diff.Minutes() * schedule.Shift2 / 389)
-		//fmt.Printf("16:30-00:00: %v\n", shiftNow)
+		//fmt.Printf("16:30-00:00: %v\n", shiftNow) ------ debug purposes -----------
 	} else if currentTime.Format("15:04") > "16:30" {
 		oldTime := ConvertTimeCurrentDate(shift2)
 		diff := ConvertTimeCurrentDate("23:59").Sub(oldTime)
 		shiftNow += int(diff.Minutes() * schedule.Shift2 / 389)
-		//fmt.Printf("16:30-00:00: %v\n", shiftNow)
+		//fmt.Printf("16:30-00:00: %v\n", shiftNow) ------ debug purposes -----------
 	}
 
 	if currentTime.Format("15:04") >= "00:00" && currentTime.Format("15:04") < "01:00" {
 		oldTime := ConvertTimeCurrentDate("00:00")
 		diff := currentTime.Sub(oldTime)
 		shiftNow += int(diff.Minutes() * schedule.Shift2 / 60)
-		//fmt.Printf("16:30-00:00: %v\n", shiftNow)
-	} /*else if currentTime.Format("15:04") > "16:30" {
-		oldTime := ConvertTimeCurrentDate(shift2)
-		diff := ConvertTimeCurrentDate("23:59").Sub(oldTime)
-		shiftNow += int(diff.Minutes() * schedule.Shift2 / 389)
-		//fmt.Printf("16:30-00:00: %v\n", shiftNow)
-	}*/
-	/*oldTime := ConvertTimeCurrentDate("01:00")
-	diff := currentTime.Sub(oldTime)*/
-	/*if schedule.Shift3 > 0 && schedule.Shift2 > 0 && schedule.Shift1 > 0 {
-		shiftNow = int(diff.Minutes() * DailySchedule / 1380)
-	} else if schedule.Shift2 > 0 && schedule.Shift1 > 0 {
-		shiftNow = int(diff.Minutes() * DailySchedule / 1020)
-	} else if schedule.Shift3 > 0 && schedule.Shift1 > 0 {
-		shiftNow = int(diff.Minutes() * DailySchedule / 930)
-	} else if schedule.Shift1 > 0 {
-		shiftNow = int(diff.Minutes() * DailySchedule / 510)
-	} else if schedule.Shift2 > 0 {
-		shiftNow = int(diff.Minutes() * DailySchedule / 510)
-	} else if schedule.Shift3 > 0 {
-		shiftNow = int(diff.Minutes() * DailySchedule / 420)
-	}*/
-	//shiftNow = int(diff.Minutes() * DailySchedule / 1380)
-	//}
+	}
 
 	scheduleTest.DailySchedule = float64(DailySchedule)
 	scheduleTest.Schedule = float64(shiftNow)
@@ -162,6 +132,3 @@ func ShiftDay(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 }
-
-// This is an example of a basic Get Request with Go-chi
-// More info can be found here: https://go-chi.io/ && https://github.com/go-chi/chi/tree/master/_examples

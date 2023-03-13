@@ -28,7 +28,7 @@ func ProductionRouter() chi.Router {
 
 	// Set up sub-routes
 	productionRoute.Get("/now/{line_id}", production.Production)
-	productionRoute.Get("/day/{line_id}", production.ProductionDay)
+	productionRoute.Get("/day/{line_id}", production.DayProduction)
 	productionRoute.Get("/yesterday/{line_id}", production.ProductionYesterday)
 
 	// Return the Sub-Route back to the main API Router in main.go

@@ -22,7 +22,7 @@ type productionDayStruct struct {
 	check string
 }*/
 
-func ProductionDay(w http.ResponseWriter, r *http.Request) {
+func DayProduction(w http.ResponseWriter, r *http.Request) {
 	ctx := context.Background()
 	production := productionDayStruct{}
 	lineID := StringToInt(chi.URLParam(r, "line_id"))
@@ -36,17 +36,17 @@ func ProductionDay(w http.ResponseWriter, r *http.Request) {
 	case 47:
 		query, err = config.DB.Prepare(config.SqlGEN3)
 	case 53:
-		query, err = config.DB2.Prepare(config.SqlInv3)
+		query, err = config.DB.Prepare(config.SqlInv3)
 	case 52:
-		query, err = config.DB2.Prepare(config.SqlYF)
+		query, err = config.DB.Prepare(config.SqlYF)
 	case 90:
-		query, err = config.DB2.Prepare(config.SqlR744)
+		query, err = config.DB.Prepare(config.SqlR744)
 	case 83:
-		query, err = config.DB2.Prepare(config.SqlInv4)
+		query, err = config.DB.Prepare(config.SqlInv4)
 	case 85:
-		query, err = config.DB2.Prepare(config.SqlInv42)
+		query, err = config.DB.Prepare(config.SqlInv42)
 	case 91:
-		query, err = config.DB2.Prepare(config.SqlInv43)
+		query, err = config.DB.Prepare(config.SqlInv43)
 	}
 
 	//query, err := config.DB.Prepare(sqlSchedule)

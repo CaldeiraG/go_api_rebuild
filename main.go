@@ -25,15 +25,13 @@ func main() {
 		// Change SpecPath && SpecFile to ./static/swagger.json when developing locally!
 		SpecPath:    "./static/swagger.json",
 		SpecFile:    "./static/swagger.json",
-		Title:       "OnlyTunes API Template",
-		Description: "API Documentation for OnlyTunes API Template",
+		Title:       "Hanon Systems API",
+		Description: "API Documentation for Hanon Systems",
 	}
 	// =================
 	// Declaring Environment variables
 	// =================
 	var DBHost, DBUser, DBPass, DBName, DBPort string
-	var DBHost2, DBUser2, DBPass2, DBName2, DBPort2 string
-	var DBHost3, DBUser3, DBPass3, DBName3, DBPort3 string
 	err := godotenv.Load(".env")
 	if err != nil {
 		log.Printf("Error loading .env file, Using container variables: ERR: %v", err)
@@ -44,17 +42,6 @@ func main() {
 	DBName = os.Getenv("DB_NAME")
 	DBPort = os.Getenv("DB_PORT")
 
-	DBHost2 = os.Getenv("DB_HOST2")
-	DBUser2 = os.Getenv("DB_USER2")
-	DBPass2 = os.Getenv("DB_PASS2")
-	DBName2 = os.Getenv("DB_NAME2")
-	DBPort2 = os.Getenv("DB_PORT2")
-
-	DBHost3 = os.Getenv("DB_HOST3")
-	DBUser3 = os.Getenv("DB_USER3")
-	DBPass3 = os.Getenv("DB_PASS3")
-	DBName3 = os.Getenv("DB_NAME3")
-	DBPort3 = os.Getenv("DB_PORT3")
 	// =================
 	// Declaring Database Connection
 	// =================
@@ -66,30 +53,6 @@ func main() {
 	}
 	ctx := context.Background()
 	err = config.DB.PingContext(ctx)
-	if err != nil {
-		log.Fatal(err.Error())
-	}
-
-	connString2 := fmt.Sprintf("server=%s;user id=%s;password=%s;port=%s;database=%s;encrypt=disable", DBHost2, DBUser2, DBPass2, DBPort2, DBName2)
-
-	config.DB2, err = sql.Open("sqlserver", connString2)
-	if err != nil {
-		log.Fatal("Error creating connection pool: ", err.Error())
-	}
-	ctx2 := context.Background()
-	err = config.DB2.PingContext(ctx2)
-	if err != nil {
-		log.Fatal(err.Error())
-	}
-
-	connString3 := fmt.Sprintf("server=%s;user id=%s;password=%s;port=%s;database=%s;encrypt=disable", DBHost3, DBUser3, DBPass3, DBPort3, DBName3)
-
-	config.DB3, err = sql.Open("sqlserver", connString3)
-	if err != nil {
-		log.Fatal("Error creating connection pool: ", err.Error())
-	}
-	ctx3 := context.Background()
-	err = config.DB3.PingContext(ctx3)
 	if err != nil {
 		log.Fatal(err.Error())
 	}

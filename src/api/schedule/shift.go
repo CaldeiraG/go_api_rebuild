@@ -12,28 +12,22 @@ import (
 	"time"
 )
 
-type ScheduleStruct struct {
+type scheduleStruct struct {
 	CurrentWeek int
 	Shift1      float64
 	Shift2      float64
 	Shift3      float64
 }
 
-type ScheduleStructTest struct {
+type scheduleStructTest struct {
 	CurrentWeek int
 	Shift       float64
 }
 
-type ScheduleNowStruct struct {
+type scheduleNowStruct struct {
 	CurrentWeek int
 	Shift       float64
 }
-
-/*type inTime struct {
-	start string
-	end   string
-	check string
-}*/
 
 const sqlSchedule = `select piv.cur_week as 'CurrentWeek', ISNULL(piv.[1],0) as 'Shift1', ISNULL(piv.[2],0) as 'Shift2', ISNULL(piv.[3],0) as 'Shift3' from 
 					(select schedule as 'schedule',shift as 'shift',datepart(ww,getdate()) as 'cur_week'
@@ -48,8 +42,8 @@ const sqlSchedule = `select piv.cur_week as 'CurrentWeek', ISNULL(piv.[1],0) as 
 
 func Shift(w http.ResponseWriter, r *http.Request) {
 	ctx := context.Background()
-	schedule := ScheduleStruct{}
-	scheduleTest := ScheduleStructTest{}
+	schedule := scheduleStruct{}
+	scheduleTest := scheduleStructTest{}
 	lineID := StringToInt(chi.URLParam(r, "line_id"))
 
 	query, err := config.DB.Prepare(sqlSchedule)
@@ -104,8 +98,8 @@ func Shift(w http.ResponseWriter, r *http.Request) {
 
 func Now(w http.ResponseWriter, r *http.Request) {
 	ctx := context.Background()
-	schedule := ScheduleStruct{}
-	scheduleNow := ScheduleNowStruct{}
+	schedule := scheduleStruct{}
+	scheduleNow := scheduleNowStruct{}
 	lineID := StringToInt(chi.URLParam(r, "line_id"))
 
 	query, err := config.DB.Prepare(sqlSchedule)
