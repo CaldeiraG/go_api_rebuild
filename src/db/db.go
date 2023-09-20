@@ -41,3 +41,9 @@ const SqlInv43 = `select COUNT(MINDEX) as prod, COALESCE(MAX(RIGHT(LEFT(RTRIM(PN
 const SqlmodelCheck = `SELECT COALESCE([name],'')
                      FROM [TESTEProd].[dbo].[models] 
                      where CHARINDEX(@model, fassy_models) > 0 and line_id = @line_id`
+
+const SqlInsertTicket = `INSERT INTO [TESTEProd].dbo.[ScrapTickets] (ticket,date,lastupdated,price,costCenter) VALUES (@ticket,@date,@lastupdated,@price,@costcenter)`
+
+const SqlInsertTicketNums = `INSERT INTO [TESTEProd].dbo.[ScrapTickets] (ticket,date,requester,person,lastupdated,price) VALUES (?,?,?,?,?,?)`
+
+const SqlAddValues = `UPDATE [TESTEProd].dbo.[ScrapTickets] SET date = ?,person = ?,price = ?,lastupdated = ? WHERE ticket = ?`

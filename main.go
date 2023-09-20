@@ -89,6 +89,7 @@ func main() {
 	// =================
 	r.Mount("/schedule", api.ScheduleRouter())
 	r.Mount("/production", api.ProductionRouter())
+	r.Mount("/scrap", api.ScrapRouter())
 	// =================
 	// Initialize API Documentation
 	// =================
