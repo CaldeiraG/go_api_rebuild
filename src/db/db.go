@@ -46,4 +46,4 @@ const SqlInsertTicket = `INSERT INTO [TESTEProd].dbo.[ScrapTickets] (ticket,date
 
 const SqlInsertTicketNums = `INSERT INTO [TESTEProd].dbo.[ScrapTickets] (ticket,date,requester,person,lastupdated,price) VALUES (?,?,?,?,?,?)`
 
-const SqlAddValues = `UPDATE [TESTEProd].dbo.[ScrapTickets] SET date = ?,person = ?,price = ?,lastupdated = ? WHERE ticket = ?`
+const SqlUpdatePerson = `UPDATE [TESTEProd].dbo.[ScrapTickets] SET person = @person,lastupdated = @lastupdated WHERE ticket = @ticket`

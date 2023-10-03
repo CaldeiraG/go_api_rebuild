@@ -8,15 +8,13 @@ import (
 	"time"
 )
 
-func InsertTicketList(w http.ResponseWriter, r *http.Request) {
+func updateTicketPerson(w http.ResponseWriter, r *http.Request) {
 	//ctx := context.Background()
 	//ticketStruct := TicketDetails{}
 	ticketID := r.URL.Query().Get("ticket")
-	dateTicket := r.URL.Query().Get("date")
-	price := r.URL.Query().Get("price")
-	costCenter := r.URL.Query().Get("costcenter")
+	person := r.URL.Query().Get("person")
 
-	query, err := config.DB.Prepare(config.SqlInsertTicket)
+	query, err := config.DB.Prepare(config.SqlUpdatePerson)
 	if err != nil {
 		w.WriteHeader(500)
 		w.Write([]byte("Something Went Wrong!"))
@@ -24,7 +22,7 @@ func InsertTicketList(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, err = query.Exec(sql.Named("ticket", ticketID), sql.Named("date", dateTicket), sql.Named("lastupdated", time.Now()), sql.Named("price", price), sql.Named("costcenter", costCenter))
+	_, err = query.Exec(sql.Named("ticket", ticketID), sql.Named("person", person), sql.Named("lastupdated", time.Now()))
 	if err != nil {
 		w.WriteHeader(500)
 		w.Write([]byte("Something Went Wrong!"))
