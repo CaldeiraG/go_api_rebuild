@@ -44,6 +44,8 @@ func ScrapRouter() chi.Router {
 	// Set up sub-routes
 	//scrapRoute.Get("/insertticket/?ticket={ticket}&date={date}&costcenter={costcenter}&price={price}", scrap.InsertTicketList)
 	scrapRoute.Get("/insertTicket", scrap.InsertTicketList)
+	scrapRoute.Get("/updatePerson", scrap.UpdateTicketPerson)
+	scrapRoute.Get("/updateRequester", scrap.UpdateTicketRequester)
 	//scrapRoute.Get("/yesterday/{line_id}", production.ProductionYesterday)
 
 	// Return the Sub-Route back to the main API Router in main.go

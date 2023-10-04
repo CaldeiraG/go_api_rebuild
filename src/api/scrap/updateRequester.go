@@ -8,13 +8,13 @@ import (
 	"time"
 )
 
-func UpdateTicketPerson(w http.ResponseWriter, r *http.Request) {
+func UpdateTicketRequester(w http.ResponseWriter, r *http.Request) {
 	//ctx := context.Background()
 	//ticketStruct := TicketDetails{}
 	ticketID := r.URL.Query().Get("ticket")
-	person := r.URL.Query().Get("person")
+	requester := r.URL.Query().Get("requester")
 
-	query, err := config.DB.Prepare(config.SqlUpdatePerson)
+	query, err := config.DB.Prepare(config.SqlUpdateRequester)
 	if err != nil {
 		w.WriteHeader(500)
 		w.Write([]byte("Something Went Wrong!"))
@@ -22,7 +22,7 @@ func UpdateTicketPerson(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, err = query.Exec(sql.Named("ticket", ticketID), sql.Named("person", person), sql.Named("lastupdated", time.Now()))
+	_, err = query.Exec(sql.Named("ticket", ticketID), sql.Named("person", requester), sql.Named("lastupdated", time.Now()))
 	if err != nil {
 		w.WriteHeader(500)
 		w.Write([]byte("Something Went Wrong!"))
@@ -31,5 +31,5 @@ func UpdateTicketPerson(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(200)
-	w.Write([]byte("Person updated!"))
+	w.Write([]byte("Requester updated!"))
 }
