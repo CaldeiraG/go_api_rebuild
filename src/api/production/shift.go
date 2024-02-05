@@ -123,6 +123,8 @@ func Production(w http.ResponseWriter, r *http.Request) {
 		newRecord2 = queryModel.QueryRowContext(ctx, sql.Named("model", production.Model), sql.Named("line_id", lineID))
 	case 85: //Inv42
 		newRecord2 = queryModel.QueryRowContext(ctx, sql.Named("model", production.Model), sql.Named("line_id", lineID))
+	case 90: //R744
+		newRecord2 = queryModel.QueryRowContext(ctx, sql.Named("model", production.Model), sql.Named("line_id", lineID))
 		//case 91: //Inv43
 		//newRecord2 = queryModel.QueryRowContext(ctx, sql.Named("model", production.Model), sql.Named("line_id", lineID))
 	}

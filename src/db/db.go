@@ -18,7 +18,7 @@ const SqlInv3 = `select COUNT(MINDEX) as prod, COALESCE(MAX(LEFT(RIGHT(RTRIM(PAR
 					 FROM [INVERTER_Clone].[dbo].[INVERTER_PROD]
 					 where REJCODE is null and WRITE_STATION = '140' and TIME_STAMP >= @dataInicial and TIME_STAMP <= @dataFinal`
 
-const SqlR744 = `select COUNT(MINDEX) as prod, 'R744' as model
+const SqlR744 = `select COUNT(MINDEX) as prod, COALESCE(MAX(RIGHT(LEFT(RTRIM(PN_END_ITEM), 9),4)),'') as model
 					 FROM [R744_Clone].[dbo].[LineD]
 					 where (REJECTED IS NULL OR REJECTED = 0) and WRITE_STATION = '670' and TIME_STAMP >= @dataInicial and TIME_STAMP <= @dataFinal`
 
