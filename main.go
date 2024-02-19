@@ -31,7 +31,7 @@ func main() {
 	// =================
 	// Declaring Environment variables
 	// =================
-	var DBHost, DBUser, DBPass, DBName, DBPort string
+	var DBHost, DBUser, DBPass, DBName, DBPort, DBGEN5Host, DBGEN5User, DBGEN5Pass, DBGEN5Name, DBGEN5Port string
 	err := godotenv.Load(".env")
 	if err != nil {
 		log.Printf("Error loading .env file, Using container variables: ERR: %v", err)
@@ -41,6 +41,12 @@ func main() {
 	DBPass = os.Getenv("DB_PASS")
 	DBName = os.Getenv("DB_NAME")
 	DBPort = os.Getenv("DB_PORT")
+
+	DBGEN5Host = os.Getenv("DBGEN5_HOST")
+	DBGEN5User = os.Getenv("DBGEN5_USER")
+	DBGEN5Pass = os.Getenv("DBGEN5_PASS")
+	DBGEN5Name = os.Getenv("DBGEN5_NAME")
+	DBGEN5Port = os.Getenv("DBGEN5_PORT")
 
 	// =================
 	// Declaring Database Connection
@@ -53,6 +59,18 @@ func main() {
 	}
 	ctx := context.Background()
 	err = config.DB.PingContext(ctx)
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+
+	connStringGEN5 := fmt.Sprintf("server=%s;user id=%s;password=%s;port=%s;database=%s;encrypt=disable", DBGEN5Host, DBGEN5User, DBGEN5Pass, DBGEN5Port, DBGEN5Name)
+
+	config.DB2, err = sql.Open("sqlserver", connStringGEN5)
+	if err != nil {
+		log.Fatal("Error creating connection pool: ", err.Error())
+	}
+	ctx2 := context.Background()
+	err = config.DB.PingContext(ctx2)
 	if err != nil {
 		log.Fatal(err.Error())
 	}

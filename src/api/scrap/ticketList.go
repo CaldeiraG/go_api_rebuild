@@ -9,8 +9,6 @@ import (
 )
 
 func InsertTicketList(w http.ResponseWriter, r *http.Request) {
-	//ctx := context.Background()
-	//ticketStruct := TicketDetails{}
 	ticketID := r.URL.Query().Get("ticket")
 	dateTicket := r.URL.Query().Get("date")
 	price := r.URL.Query().Get("price")

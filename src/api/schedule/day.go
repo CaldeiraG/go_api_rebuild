@@ -24,22 +24,20 @@ type DayTestStruct struct {
 	Schedule      float64
 }
 
-/*type inTime struct {
-	start string
-	end   string
-	check string
-}*/
+/*
+const sqlScheduleDay = `select piv.cur_week as 'CurrentWeek', ISNULL(piv.[1],0) as 'Shift1', ISNULL(piv.[2],0) as 'Shift2', ISNULL(piv.[3],0) as 'Shift3' from
+(select schedule as 'schedule',shift as 'shift',datepart(ww,getdate()) as 'cur_week'
+from TESTEProd.dbo.weekly_sched WS
 
-const sqlScheduleDay = `select piv.cur_week as 'CurrentWeek', ISNULL(piv.[1],0) as 'Shift1', ISNULL(piv.[2],0) as 'Shift2', ISNULL(piv.[3],0) as 'Shift3' from 
-					(select schedule as 'schedule',shift as 'shift',datepart(ww,getdate()) as 'cur_week'
-					from TESTEProd.dbo.weekly_sched WS
+where line_id = @line_id and timestamp = CAST(GETDATE() as DATE)
+) as src
+pivot
+(
 
-					where line_id = @line_id and timestamp = CAST(GETDATE() as DATE) 
-					) as src 
-					pivot 
-					(
-							sum(schedule) for shift in ([1], [2], [3])
-					) as piv`
+	sum(schedule) for shift in ([1], [2], [3])
+
+) as piv`
+*/
 
 func ShiftDay(w http.ResponseWriter, r *http.Request) {
 	ctx := context.Background()

@@ -6,10 +6,6 @@ import (
 
 var DB *sql.DB
 
-const SqlVS14 = `select COUNT(id) as prod, 'VS14' as model
-					from FM12240_Visteon.dbo.FinishedPallets
-					where Rejected=0 and DateTimeInsertedOnDB >= @dataInicial and DateTimeInsertedOnDB <= @dataFinal`
-
 const SqlGEN3 = `select count(id) as prod, COALESCE(MAX(LEFT(RTRIM(CodeCeHousing), 1)),'')  as model
 					from [GEN3_Clone].[dbo].[GEN3_LINE_B_PROD]
 					WHERE LineB2Good=1 and LineNumber=2 and DateDataSave >= @dataInicial and DateDataSave <= @dataFinal`

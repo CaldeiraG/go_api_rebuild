@@ -16,12 +16,6 @@ type productionDayStruct struct {
 	Model *string `json:"-"`
 }
 
-/*type inTime struct {
-	start string
-	end   string
-	check string
-}*/
-
 func DayProduction(w http.ResponseWriter, r *http.Request) {
 	ctx := context.Background()
 	production := productionDayStruct{}
@@ -31,8 +25,6 @@ func DayProduction(w http.ResponseWriter, r *http.Request) {
 	var err error
 
 	switch lineID {
-	case 44:
-		query, err = config.DB.Prepare(config.SqlVS14)
 	case 47:
 		query, err = config.DB.Prepare(config.SqlGEN3)
 	case 53:
@@ -47,6 +39,8 @@ func DayProduction(w http.ResponseWriter, r *http.Request) {
 		query, err = config.DB.Prepare(config.SqlInv42)
 	case 91:
 		query, err = config.DB.Prepare(config.SqlInv43)
+	case 1110:
+		query, err = config.DB2.Prepare(config.SqlGEN5)
 	}
 
 	//query, err := config.DB.Prepare(sqlSchedule)
@@ -58,10 +52,6 @@ func DayProduction(w http.ResponseWriter, r *http.Request) {
 	}
 
 	defer query.Close()
-
-	//var shift1 = "08:00"
-	//var shift2 = "16:30"
-	//var shift3 = "01:00"
 
 	currentTime := time.Now()
 
@@ -94,6 +84,3 @@ func DayProduction(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 }
-
-// This is an example of a basic Get Request with Go-chi
-// More info can be found here: https://go-chi.io/ && https://github.com/go-chi/chi/tree/master/_examples

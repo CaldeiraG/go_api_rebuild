@@ -9,8 +9,6 @@ import (
 )
 
 func UpdateTicketPerson(w http.ResponseWriter, r *http.Request) {
-	//ctx := context.Background()
-	//ticketStruct := TicketDetails{}
 	ticketID := r.URL.Query().Get("ticket")
 	person := r.URL.Query().Get("person")
 
