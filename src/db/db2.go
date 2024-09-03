@@ -13,4 +13,4 @@ const SqlGEN5 = `select count(Results.ResultID) as prod, ISNULL(MAX(PN),'') as m
     inner join ProcessesModels on Processes.ProcessID = ProcessesModels.ProcessID
     inner join Models on ProcessesModels.ModelID = Models.ModelID
 
-where StationID = '9000' and Failed = 0 and ResultTimeStamp >= @dataInicial and ResultTimeStamp <= @dataFinal`
+where StationID = '9000' and Failed = 0 and CustomerPN is not null and ResultTimeStamp >= @dataInicial and ResultTimeStamp <= @dataFinal`
