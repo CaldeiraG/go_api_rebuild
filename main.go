@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"fmt"
 	"github.com/caldeirag/go-api/src/api"
+	"github.com/caldeirag/go-api/src/api/gen5"
 	config "github.com/caldeirag/go-api/src/db"
 	_ "github.com/denisenkom/go-mssqldb"
 	"github.com/go-chi/chi/v5"
@@ -51,7 +52,7 @@ func main() {
 	// =================
 	// Declaring Database Connection
 	// =================
-	connString := fmt.Sprintf("server=%s;user id=%s;password=%s;port=%s;database=%s;encrypt=disable", DBHost, DBUser, DBPass, DBPort, DBName)
+	connString := fmt.Sprintf("server=%s;user id=%s;password=%s;port=%s;database=%s;encrypt=disable;app name=HanonSystemsAPI", DBHost, DBUser, DBPass, DBPort, DBName)
 
 	config.DB, err = sql.Open("sqlserver", connString)
 	if err != nil {
@@ -63,7 +64,7 @@ func main() {
 		log.Fatal(err.Error())
 	}
 
-	connStringGEN5 := fmt.Sprintf("server=%s;user id=%s;password=%s;port=%s;database=%s;encrypt=disable", DBGEN5Host, DBGEN5User, DBGEN5Pass, DBGEN5Port, DBGEN5Name)
+	connStringGEN5 := fmt.Sprintf("server=%s;user id=%s;password=%s;port=%s;database=%s;encrypt=disable;app name=HanonSystemsAPI", DBGEN5Host, DBGEN5User, DBGEN5Pass, DBGEN5Port, DBGEN5Name)
 
 	config.DB2, err = sql.Open("sqlserver", connStringGEN5)
 	if err != nil {
@@ -74,6 +75,8 @@ func main() {
 	if err != nil {
 		log.Fatal(err.Error())
 	}
+
+	gen5.ProductionGEN5_cron()
 
 	// =================
 	// Initialize Router and WebServer
