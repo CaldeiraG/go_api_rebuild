@@ -45,3 +45,5 @@ const SqlInsertTicketNums = `INSERT INTO [TESTEProd].dbo.[ScrapTickets] (ticket,
 const SqlUpdatePerson = `UPDATE [TESTEProd].dbo.[ScrapTickets] SET person = @person,lastupdated = @lastupdated WHERE ticket = @ticket`
 
 const SqlUpdateRequester = `UPDATE [TESTEProd].dbo.[ScrapTickets] SET requester = @person,lastupdated = @lastupdated WHERE ticket = @ticket`
+
+const SqlHeartbeat = `INSERT INTO [TESTEProd].dbo.[com_heartbeat] (machine,ip,app,timestamp) VALUES (@machine,@ip,@app,@timestamp)`

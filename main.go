@@ -4,6 +4,11 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"log"
+	"net/http"
+	"os"
+	"time"
+
 	"github.com/caldeirag/go-api/src/api"
 	"github.com/caldeirag/go-api/src/api/gen5"
 	config "github.com/caldeirag/go-api/src/db"
@@ -12,10 +17,6 @@ import (
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/joho/godotenv"
 	"github.com/mvrilo/go-redoc"
-	"log"
-	"net/http"
-	"os"
-	"time"
 )
 
 func main() {
@@ -111,6 +112,7 @@ func main() {
 	r.Mount("/schedule", api.ScheduleRouter())
 	r.Mount("/production", api.ProductionRouter())
 	r.Mount("/scrap", api.ScrapRouter())
+	r.Mount("/com", api.HeartbeatRouter())
 	// =================
 	// Initialize API Documentation
 	// =================

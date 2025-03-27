@@ -1,6 +1,7 @@
 package api
 
 import (
+	"github.com/caldeirag/go-api/src/api/com"
 	"github.com/caldeirag/go-api/src/api/production"
 	"github.com/caldeirag/go-api/src/api/schedule"
 	"github.com/caldeirag/go-api/src/api/scrap"
@@ -50,4 +51,18 @@ func ScrapRouter() chi.Router {
 
 	// Return the Sub-Route back to the main API Router in main.go
 	return scrapRoute
+}
+
+func HeartbeatRouter() chi.Router {
+
+	// New Chi SubRouter
+	heartbeatRoute := chi.NewRouter()
+
+	// Set up sub-routes
+	//scrapRoute.Get("/insertticket/?ticket={ticket}&date={date}&costcenter={costcenter}&price={price}", scrap.InsertTicketList)
+	heartbeatRoute.Get("/heartbeat", com.HeartbeatInsert)
+	//scrapRoute.Get("/yesterday/{line_id}", production.ProductionYesterday)
+
+	// Return the Sub-Route back to the main API Router in main.go
+	return heartbeatRoute
 }
