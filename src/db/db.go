@@ -11,7 +11,7 @@ const SqlGEN3 = `select count(id) as prod, COALESCE(MAX(LEFT(RTRIM(CodeCeHousing
 					WHERE LineB2Good=1 and LineNumber=2 and DateDataSave >= @dataInicial and DateDataSave <= @dataFinal`
 
 const SqlInv3 = `select COUNT(MINDEX) as prod, COALESCE(MAX(LEFT(RIGHT(RTRIM(PART_NUMBER), 3),1)),'') as model
-					 FROM [INVERTER_Clone].[dbo].[INVERTER_PROD]
+					 FROM [INVERTER3_Clone].[dbo].[INVERTER_PROD]
 					 where REJCODE is null and WRITE_STATION = '140' and TIME_STAMP >= @dataInicial and TIME_STAMP <= @dataFinal`
 
 const SqlR744 = `select COUNT(MINDEX) as prod, COALESCE(MAX(RIGHT(LEFT(RTRIM(PN_END_ITEM), 9),4)),'') as model
