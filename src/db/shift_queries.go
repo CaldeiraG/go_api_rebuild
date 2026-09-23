@@ -129,7 +129,7 @@ func (qb *ProdQueryBuilder) BuildShiftQuery(
 		SELECT 
 			MAX(DATEPART(hh,%s)) AS hora,
 			COUNT(%s) AS prod
-		FROM [%s]
+		FROM %s
 		%s
 	`, lineConfig.DateTime, lineConfig.ID, lineConfig.DatabaseInUse, whereClause)
 
