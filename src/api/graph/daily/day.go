@@ -22,8 +22,8 @@ type dailyProductionResponse struct {
 func DailyProduction(w http.ResponseWriter, r *http.Request) {
 	// Get URL parameters
 	lineID := getUrlParam(r, "line_id")
-	startDateStr := getUrlParam(r, "startDate")
-	endDateStr := getUrlParam(r, "endDate")
+	startDateStr := r.URL.Query().Get("startDate")
+	endDateStr := r.URL.Query().Get("endDate")
 
 	// Validate parameters
 	if lineID == "" || startDateStr == "" || endDateStr == "" {

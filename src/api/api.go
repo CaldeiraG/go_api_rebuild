@@ -74,7 +74,7 @@ func GraphRouter() chi.Router {
 	graphRoute := chi.NewRouter()
 
 	// Set up sub-routes
-	graphRoute.Get("/daily/{line_id}", daily.DailyProduction)
+	graphRoute.Get("/daily", daily.DailyProduction)
 
 	// Return the Sub-Route back to the main API Router in main.go
 	return graphRoute
