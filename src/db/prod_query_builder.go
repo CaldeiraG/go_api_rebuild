@@ -66,15 +66,41 @@ func (qb *ProdQueryBuilder) LoadConfig() (map[string]*ProdQueryConfig, error) {
 		lineMap := lineData.(map[string]interface{})
 		
 		config := &ProdQueryConfig{
-			Name:         lineMap["name"].(string),
-			DatabaseInUse: lineMap["databaseInUse"].(string),
-			ID:           lineMap["ID"].(string),
-			DateTime:     lineMap["dateTime"].(string),
-			Param:        lineMap["param"].(string),
-			ParamRej:     lineMap["paramRej"].(string),
-			ParamModel:   lineMap["paramModel"].(string),
-			ModelID:      lineMap["model_id"].(string),
+			Name:         "",
+			DatabaseInUse: "",
+			ID:           "",
+			DateTime:     "",
+			Param:        "",
+			ParamRej:     "",
+			ParamModel:   "",
+			ModelID:      "",
 			Error:        false,
+		}
+
+		// Safely extract required fields with defaults
+		if name, ok := lineMap["name"].(string); ok {
+			config.Name = name
+		}
+		if db, ok := lineMap["databaseInUse"].(string); ok {
+			config.DatabaseInUse = db
+		}
+		if id, ok := lineMap["ID"].(string); ok {
+			config.ID = id
+		}
+		if dateTime, ok := lineMap["dateTime"].(string); ok {
+			config.DateTime = dateTime
+		}
+		if param, ok := lineMap["param"].(string); ok {
+			config.Param = param
+		}
+		if paramRej, ok := lineMap["paramRej"].(string); ok {
+			config.ParamRej = paramRej
+		}
+		if paramModel, ok := lineMap["paramModel"].(string); ok {
+			config.ParamModel = paramModel
+		}
+		if modelID, ok := lineMap["model_id"].(string); ok {
+			config.ModelID = modelID
 		}
 
 		// Optional: paramRejSta
