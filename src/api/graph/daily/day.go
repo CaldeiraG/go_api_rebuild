@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	config "github.com/caldeirag/go-api/src/db"
+	"github.com/go-chi/chi/v5"
 	"net/http"
 	"time"
 )
@@ -18,10 +19,10 @@ type dailyProductionResponse struct {
 }
 
 // DailyProduction handles the daily production endpoint
-// GET /api/graph/daily/{line_id}?startDate=2026-09-21&endDate=2026-09-21
+// GET /graph/api/daily/{line_id}?startDate=2026-09-21&endDate=2026-09-21
 func DailyProduction(w http.ResponseWriter, r *http.Request) {
-	// Get URL parameters
-	lineID := getUrlParam(r, "line_id")
+	// Get URL parameters - use chi for path params
+	lineID := chi.URLParam(r, "line_id")
 	startDateStr := r.URL.Query().Get("startDate")
 	endDateStr := r.URL.Query().Get("endDate")
 
@@ -127,7 +128,3 @@ func DailyProduction(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// getUrlParam is a helper to get URL parameters
-func getUrlParam(r *http.Request, key string) string {
-	return r.URL.Query().Get(key)
-}
