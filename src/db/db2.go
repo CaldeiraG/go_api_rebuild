@@ -1,4 +1,4 @@
-package config
+package db
 
 import (
 	"database/sql"
@@ -6,7 +6,7 @@ import (
 
 var DB2 *sql.DB
 
-const SqlGEN5 = `CREATE TABLE #prod
+const SqlGEN5Gen2 = `CREATE TABLE #prod
 (
   Hour int, Timestamp datetime, A_Total_OK int, A_Total_NOK int, B_Total_OK int, B_Total_NOK int, C1_Total_OK int, C1_Total_NOK int, C2_Total_OK int, C2_Total_NOK int, D_Total_OK int, D_Total_NOK int, E_Total_OK int, E_Total_NOK int
 )

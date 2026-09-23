@@ -1,0 +1,247 @@
+package db
+
+import (
+	"encoding/json"
+	"fmt"
+	"os"
+	"path/filepath"
+	"runtime"
+	"time"
+)
+
+// ProdQueryConfig represents the configuration for a production line
+type ProdQueryConfig struct {
+	Name         string `json:"name"`
+	DatabaseInUse string `json:"databaseInUse"`
+	ID           string `json:"ID"`
+	DateTime     string `json:"dateTime"`
+	Param        string `json:"param"`
+	ParamRej     string `json:"paramRej"`
+	ParamModel   string `json:"paramModel"`
+	ModelID      string `json:"model_id"`
+	ParamRejSta  string `json:"paramRejSta"`
+	SpecialModel map[string]string `json:"specialModel,omitempty"`
+	Error        bool   `json:"error,omitempty"`
+	QueryType    string `json:"queryType,omitempty"` // "standard" or "gen5"
+	ShiftStart   string `json:"shiftStart"`
+	ShiftEnd     string `json:"shiftEnd"`
+}
+
+// ProdQueryBuilder builds queries for production statistics
+type ProdQueryBuilder struct {
+	configPath string
+}
+
+// NewProdQueryBuilder creates a new query builder instance
+func NewProdQueryBuilder() *ProdQueryBuilder {
+	// Get the directory of this file
+	_, filename, _, ok := runtime.Caller(0)
+	if !ok {
+		panic("failed to get caller information")
+	}
+
+	// Get directory path and resolve to project root
+	dir := filepath.Dir(filename)
+	configPath := filepath.Join(dir, "..", "..", "prodFAssy_config.json")
+
+	return &ProdQueryBuilder{
+		configPath: configPath,
+	}
+}
+
+// LoadConfig loads and parses the JSON configuration
+func (qb *ProdQueryBuilder) LoadConfig() (map[string]*ProdQueryConfig, error) {
+	data, err := os.ReadFile(qb.configPath)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read config file: %w", err)
+	}
+
+	var config map[string]interface{}
+	if err := json.Unmarshal(data, &config); err != nil {
+		return nil, fmt.Errorf("failed to parse config JSON: %w", err)
+	}
+
+	result := make(map[string]*ProdQueryConfig)
+	for lineID, lineData := range config {
+		lineMap := lineData.(map[string]interface{})
+		
+		config := &ProdQueryConfig{
+			Name:         lineMap["name"].(string),
+			DatabaseInUse: lineMap["databaseInUse"].(string),
+			ID:           lineMap["ID"].(string),
+			DateTime:     lineMap["dateTime"].(string),
+			Param:        lineMap["param"].(string),
+			ParamRej:     lineMap["paramRej"].(string),
+			ParamModel:   lineMap["paramModel"].(string),
+			ModelID:      lineMap["model_id"].(string),
+			Error:        false,
+		}
+
+		// Optional: paramRejSta
+		if val, ok := lineMap["paramRejSta"]; ok && val != nil {
+			config.ParamRejSta = val.(string)
+		}
+
+		// Optional: specialModel
+		if specialModel, ok := lineMap["specialModel"].(map[string]interface{}); ok {
+			config.SpecialModel = make(map[string]string)
+			for key, val := range specialModel {
+				config.SpecialModel[key] = val.(string)
+			}
+		}
+
+		// Optional: queryType (for GEN5 queries)
+		if queryType, ok := lineMap["queryType"].(string); ok {
+			config.QueryType = queryType
+		}
+
+		// Optional: shift times
+		if shiftStart, ok := lineMap["shiftStart"].(string); ok {
+			config.ShiftStart = shiftStart
+		}
+		if shiftEnd, ok := lineMap["shiftEnd"].(string); ok {
+			config.ShiftEnd = shiftEnd
+		}
+
+		result[lineID] = config
+	}
+
+	return result, nil
+}
+
+// BuildProdQuery constructs the production statistics query
+func (qb *ProdQueryBuilder) BuildProdQuery(
+	lineID string,
+	dataInit time.Time,
+	dataFinal time.Time,
+	station string,
+	models []string,
+) (*ProdQueryConfig, error) {
+	configMap, err := qb.LoadConfig()
+	if err != nil {
+		return nil, fmt.Errorf("failed to load config: %w", err)
+	}
+
+	lineConfig, exists := configMap[lineID]
+	if !exists {
+		return nil, fmt.Errorf("line ID %s not found in configuration", lineID)
+	}
+
+	// Handle special model logic (case 53 - Gen3.8 Inverter)
+	if lineConfig.QueryType == "" && lineConfig.SpecialModel != nil {
+		// Check for BMW/VW specific models
+		for modelName, modelPattern := range lineConfig.SpecialModel {
+			if contains(models, modelName) {
+				lineConfig.ParamModel = modelPattern
+				break
+			}
+		}
+	}
+
+	// Check if this is a GEN5 query
+	if lineConfig.QueryType == "gen5" {
+		_, err := qb.GetGen5Query(lineID, dataInit, dataFinal)
+		if err != nil {
+			return nil, err
+		}
+		fmt.Printf("[DEBUG] GEN5 Query built successfully for %s\n", lineID)
+		return lineConfig, nil
+	}
+
+	// Build WHERE clause for standard queries
+	dataInitStr := dataInit.Format("2006-01-02 15:04")
+	dataFinalStr := dataFinal.Format("2006-01-02 15:04")
+
+	whereParts := []string{
+		fmt.Sprintf("%s > '%s 00:00'", lineConfig.DateTime, dataInitStr),
+		fmt.Sprintf("%s < '%s 16:30'", lineConfig.DateTime, dataFinalStr),
+	}
+
+	// Add paramModel if exists and not empty
+	if lineConfig.ParamModel != "" {
+		whereParts = append(whereParts, lineConfig.ParamModel)
+	}
+
+	// Add param condition
+	if lineConfig.Param != "" {
+		whereParts = append(whereParts, lineConfig.Param)
+	}
+
+	// Build the final WHERE clause
+	whereClause := fmt.Sprintf("WHERE %s", joinStrings(whereParts, " AND "))
+
+	// Add station filter if paramRejSta exists
+	if station != "" && lineConfig.ParamRejSta != "" {
+		stationClause := fmt.Sprintf(lineConfig.ParamRejSta, station)
+		if stationClause != "" {
+			whereClause += " AND " + stationClause
+		}
+	}
+
+	// Construct the full SQL query
+	query := fmt.Sprintf(`
+		SET DATEFIRST 1; 
+		SELECT MAX(DATEPART(hh,%s)) AS hora, COUNT(%s) AS prod
+		FROM [%s]
+		%s
+		GROUP BY DATEPART(hh,%s);
+	`, lineConfig.DateTime, lineConfig.ID, lineConfig.DatabaseInUse, whereClause, lineConfig.DateTime)
+
+	// Log the query
+	fmt.Printf("[DEBUG] Building query for %s (%s):\n  Query: %s\n  Where: %s\n",
+		lineID, lineConfig.Name, query, whereClause)
+
+	return lineConfig, nil
+}
+
+// BuildProdQueryHourly builds an hourly query with time range
+func (qb *ProdQueryBuilder) BuildProdQueryHourly(
+	lineID string,
+	startTime, endTime time.Time,
+	station string,
+	models []string,
+) (string, error) {
+	return qb.BuildQuery(lineID, startTime, endTime, station, models)
+}
+
+// GetLineInfo returns information about a production line
+func (qb *ProdQueryBuilder) GetLineInfo(lineID string) (*ProdQueryConfig, error) {
+	configMap, err := qb.LoadConfig()
+	if err != nil {
+		return nil, err
+	}
+
+	lineConfig, exists := configMap[lineID]
+	if !exists {
+		return nil, fmt.Errorf("line ID %s not found", lineID)
+	}
+
+	return lineConfig, nil
+}
+
+// GetAllLines returns all available production lines
+func (qb *ProdQueryBuilder) GetAllLines() (map[string]*ProdQueryConfig, error) {
+	return qb.LoadConfig()
+}
+
+// contains checks if a slice contains a string
+func contains(slice []string, str string) bool {
+	for _, s := range slice {
+		if s == str {
+			return true
+		}
+	}
+	return false
+}
+
+// joinStrings joins multiple strings with a separator
+func joinStrings(strs []string, sep string) string {
+	result := ""
+	for i, s := range strs {
+		if i > 0 {
+			result += sep
+		}
+		result += s
+	}
+	return result
+}
