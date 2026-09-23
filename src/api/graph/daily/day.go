@@ -26,6 +26,10 @@ func DailyProduction(w http.ResponseWriter, r *http.Request) {
 	startDateStr := r.URL.Query().Get("startDate")
 	endDateStr := r.URL.Query().Get("endDate")
 
+	fmt.Printf(lineID);
+	fmt.Printf(startDateStr);
+	fmt.Printf(endDateStr);
+
 	// Validate parameters
 	if lineID == "" || startDateStr == "" || endDateStr == "" {
 		w.WriteHeader(400)
