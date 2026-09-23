@@ -113,6 +113,7 @@ func main() {
 	r.Mount("/production", api.ProductionRouter())
 	r.Mount("/scrap", api.ScrapRouter())
 	r.Mount("/com", api.HeartbeatRouter())
+	r.Mount("/graph", api.GraphRouter())
 	// =================
 	// Initialize API Documentation
 	// =================

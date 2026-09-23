@@ -7,7 +7,7 @@ The Daily Production endpoint retrieves production data for a specific line over
 ## Endpoint
 
 ```
-GET /api/graph/daily/{line_id}?startDate={startDate}&endDate={endDate}
+GET /graph/api/daily/{line_id}?startDate={startDate}&endDate={endDate}
 ```
 
 ## Parameters
@@ -21,7 +21,7 @@ GET /api/graph/daily/{line_id}?startDate={startDate}&endDate={endDate}
 ## Request Example
 
 ```bash
-curl "http://localhost:8080/api/graph/daily/45?startDate=2026-09-21&endDate=2026-09-21"
+curl "http://localhost:4000/graph/api/daily/45?startDate=2026-09-21&endDate=2026-09-21"
 ```
 
 ## Response Format
@@ -78,21 +78,21 @@ curl "http://localhost:8080/api/graph/daily/45?startDate=2026-09-21&endDate=2026
 ### Single Date
 ```bash
 # Get daily production for Line 45 on 2026-09-21
-curl "http://localhost:8080/api/graph/daily/45?startDate=2026-09-21&endDate=2026-09-21"
+curl "http://localhost:4000/graph/api/daily/45?startDate=2026-09-21&endDate=2026-09-21"
 ```
 
 ### Date Range
 ```bash
 # Get daily production for Line 45 from 2026-09-21 to 2026-09-23
-curl "http://localhost:8080/api/graph/daily/45?startDate=2026-09-21&endDate=2026-09-23"
+curl "http://localhost:4000/graph/api/daily/45?startDate=2026-09-21&endDate=2026-09-23"
 ```
 
 ### Multiple Lines
 ```bash
 # Get daily production for multiple lines (use separate requests)
-curl "http://localhost:8080/api/graph/daily/45?startDate=2026-09-21&endDate=2026-09-21"
-curl "http://localhost:8080/api/graph/daily/53?startDate=2026-09-21&endDate=2026-09-21"
-curl "http://localhost:8080/api/graph/daily/1112?startDate=2026-09-21&endDate=2026-09-21"
+curl "http://localhost:4000/graph/api/daily/45?startDate=2026-09-21&endDate=2026-09-21"
+curl "http://localhost:4000/graph/api/daily/53?startDate=2026-09-21&endDate=2026-09-21"
+curl "http://localhost:4000/graph/api/daily/1112?startDate=2026-09-21&endDate=2026-09-21"
 ```
 
 ## Implementation Details

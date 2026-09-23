@@ -11,7 +11,7 @@ func Router() chi.Router {
 
 	// Set up sub-routes
 	// GET /api/graph/daily/{line_id}?startDate=2026-09-21&endDate=2026-09-21
-	dailyRoute.Get("/{line_id}", DailyProduction)
+	dailyRoute.Get("/api/daily/{line_id}", DailyProduction)
 
 	return dailyRoute
 }
