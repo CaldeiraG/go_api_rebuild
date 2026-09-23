@@ -63,9 +63,12 @@ func (qb *ProdQueryBuilder) LoadConfig() (map[string]*ProdQueryConfig, error) {
 
 	result := make(map[string]*ProdQueryConfig)
 	for lineID, lineData := range config {
-		lineMap := lineData.(map[string]interface{})
-		
-		config := &ProdQueryConfig{
+		lineMap, ok := lineData.(map[string]interface{})
+		if !ok {
+			continue
+		}
+
+		cfg := &ProdQueryConfig{
 			Name:         "",
 			DatabaseInUse: "",
 			ID:           "",
@@ -74,62 +77,86 @@ func (qb *ProdQueryBuilder) LoadConfig() (map[string]*ProdQueryConfig, error) {
 			ParamRej:     "",
 			ParamModel:   "",
 			ModelID:      "",
+			ParamRejSta:  "",
 			Error:        false,
+			QueryType:    "",
+			ShiftStart:   "",
+			ShiftEnd:     "",
 		}
 
-		// Safely extract required fields with defaults
-		if name, ok := lineMap["name"].(string); ok {
-			config.Name = name
+		// Safely extract fields - check both existence and type
+		if v, exists := lineMap["name"]; exists {
+			if s, ok := v.(string); ok {
+				cfg.Name = s
+			}
 		}
-		if db, ok := lineMap["databaseInUse"].(string); ok {
-			config.DatabaseInUse = db
+		if v, exists := lineMap["databaseInUse"]; exists {
+			if s, ok := v.(string); ok {
+				cfg.DatabaseInUse = s
+			}
 		}
-		if id, ok := lineMap["ID"].(string); ok {
-			config.ID = id
+		if v, exists := lineMap["ID"]; exists {
+			if s, ok := v.(string); ok {
+				cfg.ID = s
+			}
 		}
-		if dateTime, ok := lineMap["dateTime"].(string); ok {
-			config.DateTime = dateTime
+		if v, exists := lineMap["dateTime"]; exists {
+			if s, ok := v.(string); ok {
+				cfg.DateTime = s
+			}
 		}
-		if param, ok := lineMap["param"].(string); ok {
-			config.Param = param
+		if v, exists := lineMap["param"]; exists {
+			if s, ok := v.(string); ok {
+				cfg.Param = s
+			}
 		}
-		if paramRej, ok := lineMap["paramRej"].(string); ok {
-			config.ParamRej = paramRej
+		if v, exists := lineMap["paramRej"]; exists {
+			if s, ok := v.(string); ok {
+				cfg.ParamRej = s
+			}
 		}
-		if paramModel, ok := lineMap["paramModel"].(string); ok {
-			config.ParamModel = paramModel
+		if v, exists := lineMap["paramModel"]; exists {
+			if s, ok := v.(string); ok {
+				cfg.ParamModel = s
+			}
 		}
-		if modelID, ok := lineMap["model_id"].(string); ok {
-			config.ModelID = modelID
+		if v, exists := lineMap["model_id"]; exists {
+			if s, ok := v.(string); ok {
+				cfg.ModelID = s
+			}
 		}
-
-		// Optional: paramRejSta
-		if val, ok := lineMap["paramRejSta"]; ok && val != nil {
-			config.ParamRejSta = val.(string)
+		if v, exists := lineMap["paramRejSta"]; exists {
+			if s, ok := v.(string); ok {
+				cfg.ParamRejSta = s
+			}
 		}
-
-		// Optional: specialModel
-		if specialModel, ok := lineMap["specialModel"].(map[string]interface{}); ok {
-			config.SpecialModel = make(map[string]string)
-			for key, val := range specialModel {
-				config.SpecialModel[key] = val.(string)
+		if v, exists := lineMap["specialModel"]; exists {
+			if sm, ok := v.(map[string]interface{}); ok {
+				cfg.SpecialModel = make(map[string]string)
+				for key, val := range sm {
+					if s, ok := val.(string); ok {
+						cfg.SpecialModel[key] = s
+					}
+				}
+			}
+		}
+		if v, exists := lineMap["queryType"]; exists {
+			if s, ok := v.(string); ok {
+				cfg.QueryType = s
+			}
+		}
+		if v, exists := lineMap["shiftStart"]; exists {
+			if s, ok := v.(string); ok {
+				cfg.ShiftStart = s
+			}
+		}
+		if v, exists := lineMap["shiftEnd"]; exists {
+			if s, ok := v.(string); ok {
+				cfg.ShiftEnd = s
 			}
 		}
 
-		// Optional: queryType (for GEN5 queries)
-		if queryType, ok := lineMap["queryType"].(string); ok {
-			config.QueryType = queryType
-		}
-
-		// Optional: shift times
-		if shiftStart, ok := lineMap["shiftStart"].(string); ok {
-			config.ShiftStart = shiftStart
-		}
-		if shiftEnd, ok := lineMap["shiftEnd"].(string); ok {
-			config.ShiftEnd = shiftEnd
-		}
-
-		result[lineID] = config
+		result[lineID] = cfg
 	}
 
 	return result, nil
@@ -154,7 +181,7 @@ func (qb *ProdQueryBuilder) BuildProdQuery(
 	}
 
 	// Handle special model logic (case 53 - Gen3.8 Inverter)
-	if lineConfig.QueryType == "" && lineConfig.SpecialModel != nil {
+	if lineConfig.QueryType == "" && len(lineConfig.SpecialModel) > 0 {
 		// Check for BMW/VW specific models
 		for modelName, modelPattern := range lineConfig.SpecialModel {
 			if contains(models, modelName) {
