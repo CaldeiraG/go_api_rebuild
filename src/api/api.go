@@ -2,6 +2,7 @@ package api
 
 import (
 	"github.com/caldeirag/go-api/src/api/com"
+	"github.com/caldeirag/go-api/src/api/graph/daily"
 	"github.com/caldeirag/go-api/src/api/production"
 	"github.com/caldeirag/go-api/src/api/schedule"
 	"github.com/caldeirag/go-api/src/api/scrap"
@@ -65,4 +66,16 @@ func HeartbeatRouter() chi.Router {
 
 	// Return the Sub-Route back to the main API Router in main.go
 	return heartbeatRoute
+}
+
+func GraphRouter() chi.Router {
+
+	// New Chi SubRouter
+	graphRoute := chi.NewRouter()
+
+	// Set up sub-routes
+	graphRoute.Get("/daily/{line_id}", daily.DailyProduction)
+
+	// Return the Sub-Route back to the main API Router in main.go
+	return graphRoute
 }
