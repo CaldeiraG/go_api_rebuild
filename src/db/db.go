@@ -23,16 +23,19 @@ const SqlYF = `select COUNT(MINDEX) as prod, COALESCE(MAX(RIGHT(LEFT(RTRIM(END_I
 				 where REJECTED = 0 and WRITE_STATION = 990 and TIME_STAMP >= @dataInicial and TIME_STAMP <= @dataFinal`
 
 const SqlInv4 = `select COUNT(MINDEX) as prod, COALESCE(MAX(RIGHT(LEFT(RTRIM(PN_INVERTER), 8),3)),'') as model
-				 FROM [GEN4_Inverter].[dbo].[INVERTER_PROD]
+				 FROM [Inverter_Clone].[dbo].[Line1]
 				 where (REJECTED IS NULL OR REJECTED = 0) and WRITE_STATION = '90' and TIME_STAMP >= @dataInicial and TIME_STAMP <= @dataFinal`
 
 const SqlInv42 = `select COUNT(MINDEX) as prod, COALESCE(MAX(RIGHT(LEFT(RTRIM(PN_INVERTER), 8),3)),'') as model
-				 FROM [GEN4_Inverter].[dbo].[INVERTER_LINE2_PROD]
+				 FROM [Inverter_Clone].[dbo].[Line2]
 				 where (REJECTED IS NULL OR REJECTED = 0) and WRITE_STATION = '90' and TIME_STAMP >= @dataInicial and TIME_STAMP <= @dataFinal`
 
 const SqlInv43 = `select COUNT(MINDEX) as prod, COALESCE(MAX(RIGHT(LEFT(RTRIM(PN_INVERTER), 8),3)),'') as model
-				 FROM [GEN4_Inverter].[dbo].[INVERTER_LINE3_PROD]
+				 FROM [Inverter_Clone].[dbo].[Line3]
 				 where (REJECTED IS NULL OR REJECTED = 0) and WRITE_STATION = '90' and TIME_STAMP >= @dataInicial and TIME_STAMP <= @dataFinal`
+
+const SqlGEN5 = `select SUM(D_Total_OK) as prod, 'GEN5' as model  from [GEN5ProdStats].[dbo].[Production] where 
+drop table #prod`
 
 const SqlmodelCheck = `SELECT COALESCE([name],'')
                      FROM [TESTEProd].[dbo].[models] 
