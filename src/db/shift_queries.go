@@ -163,7 +163,8 @@ func (qb *ProdQueryBuilder) BuildShiftQuery(
 		query = fmt.Sprintf(`
 		SELECT 
 			DATEPART(hh,%s) AS hora,
-			COUNT(%s) AS prod
+			COUNT(%s) AS prod,
+			'n/a' as model
 		FROM %s
 		WHERE %s
 		GROUP BY DATEPART(hh,%s)
@@ -302,7 +303,8 @@ func (qb *ProdQueryBuilder) BuildShiftQueryNOK(
 		query = fmt.Sprintf(`
 		SELECT 
 			DATEPART(hh,%s) AS hora,
-			COUNT(%s) AS prod
+			COUNT(%s) AS prod,
+			'n/a' as model
 		FROM %s
 		WHERE %s
 		GROUP BY DATEPART(hh,%s)

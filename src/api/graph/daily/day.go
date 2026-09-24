@@ -24,6 +24,7 @@ type dailyProductionResponse struct {
 	Hora   int    `json:"hora"`
 	Prod   int64  `json:"prod"`
 	Shift  string `json:"shift"`
+	Model  string `json:"model,omitempty"`
 }
 
 // DailyProduction handles the daily production endpoint
@@ -86,6 +87,7 @@ func DailyProduction(w http.ResponseWriter, r *http.Request) {
 					Hora:   0,
 					Prod:   0,
 					Shift:  string(shift.ShiftType),
+					Model:  "",
 				})
 				continue
 			}
@@ -99,6 +101,7 @@ func DailyProduction(w http.ResponseWriter, r *http.Request) {
 					Hora:   0,
 					Prod:   0,
 					Shift:  string(shift.ShiftType),
+					Model:  "",
 				})
 				continue
 			}
@@ -107,7 +110,8 @@ func DailyProduction(w http.ResponseWriter, r *http.Request) {
 			for rows.Next() {
 				var hora int
 				var prod sql.NullInt64
-				err = rows.Scan(&hora, &prod)
+				var model string
+				err = rows.Scan(&hora, &prod, &model)
 				if err != nil {
 					continue
 				}
@@ -119,6 +123,7 @@ func DailyProduction(w http.ResponseWriter, r *http.Request) {
 						Hora:   hora,
 						Prod:   prod.Int64,
 						Shift:  string(shift.ShiftType),
+						Model:  model,
 					})
 				} else {
 					results = append(results, dailyProductionResponse{
@@ -127,6 +132,7 @@ func DailyProduction(w http.ResponseWriter, r *http.Request) {
 						Hora:   hora,
 						Prod:   0,
 						Shift:  string(shift.ShiftType),
+						Model:  "n/a",
 					})
 				}
 			}
