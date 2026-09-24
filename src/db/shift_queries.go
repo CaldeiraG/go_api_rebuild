@@ -164,12 +164,11 @@ func (qb *ProdQueryBuilder) BuildShiftQuery(
 		SELECT 
 			DATEPART(hh,%s) AS hora,
 			COUNT(%s) AS prod,
-			'n/a' as model
+			%s as model
 		FROM %s
 		WHERE %s
-		GROUP BY DATEPART(hh,%s)
-		ORDER BY hora;
-	`, lineConfig.DateTime, lineConfig.ID, lineConfig.DatabaseInUse, whereClause, lineConfig.DateTime)
+		GROUP BY DATEPART(hh,%s), %s
+	`, lineConfig.DateTime, lineConfig.ID, lineConfig.ModelID, lineConfig.DatabaseInUse, whereClause, lineConfig.DateTime, lineConfig.ModelID)
 	}
 
 	// Log the full query for debugging
@@ -304,12 +303,11 @@ func (qb *ProdQueryBuilder) BuildShiftQueryNOK(
 		SELECT 
 			DATEPART(hh,%s) AS hora,
 			COUNT(%s) AS prod,
-			'n/a' as model
+			%s as model
 		FROM %s
 		WHERE %s
-		GROUP BY DATEPART(hh,%s)
-		ORDER BY hora;
-	`, lineConfig.DateTime, lineConfig.ID, lineConfig.DatabaseInUse, whereClause, lineConfig.DateTime)
+		GROUP BY DATEPART(hh,%s), %s
+	`, lineConfig.DateTime, lineConfig.ID, lineConfig.ModelID, lineConfig.DatabaseInUse, whereClause, lineConfig.DateTime, lineConfig.ModelID)
 	}
 
 	return query, nil
