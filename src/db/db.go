@@ -6,6 +6,7 @@ import (
 
 var DB *sql.DB
 
+// Production and Schedule SQL queries
 const SqlGEN3 = `select count(id) as prod, COALESCE(MAX(LEFT(RTRIM(CodeCeHousing), 1)),'')  as model
 					from [GEN3_Clone].[dbo].[GEN3_LINE_B_PROD]
 					WHERE LineB2Good=1 and LineNumber=2 and DateDataSave >= @dataInicial and DateDataSave <= @dataFinal`
@@ -38,8 +39,8 @@ const SqlGEN5 = `select SUM(D_Total_OK) as prod, 'GEN5' as model  from [GEN5Prod
 drop table #prod`
 
 const SqlmodelCheck = `SELECT COALESCE([name],'')
-                     FROM [TESTEProd].[dbo].[models] 
-                     where CHARINDEX(@model, fassy_models) > 0 and line_id = @line_id`
+                      FROM [TESTEProd].[dbo].[models] 
+                      where CHARINDEX(@model, fassy_models) > 0 and line_id = @line_id`
 
 const SqlInsertTicket = `INSERT INTO [TESTEProd].dbo.[ScrapTickets] (ticket,date,lastupdated,price,costCenter) VALUES (@ticket,@date,@lastupdated,@price,@costcenter)`
 

@@ -191,16 +191,6 @@ func (qb *ProdQueryBuilder) BuildProdQuery(
 		}
 	}
 
-	// Check if this is a GEN5 query
-	if lineConfig.QueryType == "gen5" {
-		_, err := qb.GetGen5Query(lineID, dataInit, dataFinal)
-		if err != nil {
-			return nil, err
-		}
-		fmt.Printf("[DEBUG] GEN5 Query built successfully for %s\n", lineID)
-		return lineConfig, nil
-	}
-
 	// Build WHERE clause for standard queries
 	dataInitStr := dataInit.Format("2006-01-02 15:04")
 	dataFinalStr := dataFinal.Format("2006-01-02 15:04")
@@ -243,31 +233,6 @@ func (qb *ProdQueryBuilder) BuildProdQuery(
 	// Log the query
 	fmt.Printf("[DEBUG] Building query for %s (%s):\n  Query: %s\n  Where: %s\n",
 		lineID, lineConfig.Name, query, whereClause)
-
-	return lineConfig, nil
-}
-
-// BuildProdQueryHourly builds an hourly query with time range
-func (qb *ProdQueryBuilder) BuildProdQueryHourly(
-	lineID string,
-	startTime, endTime time.Time,
-	station string,
-	models []string,
-) (string, error) {
-	return qb.BuildQuery(lineID, startTime, endTime, station, models)
-}
-
-// GetLineInfo returns information about a production line
-func (qb *ProdQueryBuilder) GetLineInfo(lineID string) (*ProdQueryConfig, error) {
-	configMap, err := qb.LoadConfig()
-	if err != nil {
-		return nil, err
-	}
-
-	lineConfig, exists := configMap[lineID]
-	if !exists {
-		return nil, fmt.Errorf("line ID %s not found", lineID)
-	}
 
 	return lineConfig, nil
 }
