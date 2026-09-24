@@ -70,6 +70,11 @@ func DailyProduction(w http.ResponseWriter, r *http.Request) {
 		shifts := qb.GetAllShiftsForDate(date)
 
 		for _, shift := range shifts {
+			// Check if shift time range overlaps with date range
+			if !shiftsOverlap(shift.StartTime, shift.EndTime, startDate, endDate) {
+				continue
+			}
+
 			query, err := qb.GetShiftProduction(lineID, date, shift.ShiftType)
 			if err != nil {
 				results = append(results, dailyProductionResponse{
@@ -142,4 +147,34 @@ func DailyProduction(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte(fmt.Sprintf(`{"error": "Failed to encode response"}`)))
 		return
 	}
+}
+
+// shiftsOverlap checks if a shift time range overlaps with the requested date range
+func shiftsOverlap(startTime, endTime, startDate, endDate time.Time) bool {
+	// Convert to comparable timestamps
+	start := startTime.Format("2006-01-02 15:04:00")
+	end := endTime.Format("2006-01-02 15:04:00")
+	dateStart := startDate.Format("2006-01-02")
+	dateEnd := endDate.Format("2006-01-02")
+
+	// Check if shift range overlaps with date range
+	shiftStart := startTime.Format("15:04")
+	shiftEnd := endTime.Format("15:04")
+
+	// If shift is on the same day or within date range
+	if startTime.Format("2006-01-02") >= dateStart && endTime.Format("2006-01-02") <= dateEnd {
+		return true
+	}
+
+	// If shift crosses dates (e.g., 22:00 to 02:00)
+	if startTime.Before(endDate) && endTime.After(startDate) {
+		return true
+	}
+
+	// If shift starts within the date range
+	if startTime.After(startDate) && startTime.Before(endDate) {
+		return true
+	}
+
+	return false
 }
