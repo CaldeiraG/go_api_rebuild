@@ -78,7 +78,7 @@ func DailyNOK(w http.ResponseWriter, r *http.Request) {
 		shifts := qb.GetAllShiftsForDate(date)
 
 		for _, shift := range shifts {
-			query, err := qb.GetShiftProduction(lineID, date, shift.ShiftType)
+			query, err := qb.GetShiftProductionNOK(lineID, date, shift.ShiftType)
 			if err != nil {
 				results = append(results, dailyNOKResponse{
 					LineID: lineID,
