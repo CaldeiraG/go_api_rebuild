@@ -171,6 +171,10 @@ func (qb *ProdQueryBuilder) BuildShiftQuery(
 	`, lineConfig.DateTime, lineConfig.ID, lineConfig.DatabaseInUse, whereClause, lineConfig.DateTime)
 	}
 
+	// Log the full query for debugging
+	fmt.Printf("[DEBUG] BuildShiftQuery:\n  LineID: %s\n  Shift: %s\n  Date: %s\n  Query: %s\n",
+		lineID, shiftType, dateStr, query)
+
 	return query, nil
 }
 
