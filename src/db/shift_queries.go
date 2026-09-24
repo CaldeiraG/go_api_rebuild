@@ -144,8 +144,23 @@ func (qb *ProdQueryBuilder) BuildShiftQuery(
 		}
 	}
 
-	// Build query with GROUP BY hour for hourly breakdown
-	query := fmt.Sprintf(`
+	query := ""
+
+	if lineConfig.QueryType == "gen5" {
+		// For GEN5, we use the specific GEN5 query builder
+		query = fmt.Sprintf(`
+		SELECT 
+			Hour as hora,
+			max(OK) as prod,
+			model
+		FROM [%s]
+		%s
+		GROUP BY Hour, Model
+	`, lineConfig.DatabaseInUse, whereClause)
+	} else {
+
+		// Build query with GROUP BY hour for hourly breakdown
+		query = fmt.Sprintf(`
 		SELECT 
 			DATEPART(hh,%s) AS hora,
 			COUNT(%s) AS prod
@@ -154,10 +169,7 @@ func (qb *ProdQueryBuilder) BuildShiftQuery(
 		GROUP BY DATEPART(hh,%s)
 		ORDER BY hora;
 	`, lineConfig.DateTime, lineConfig.ID, lineConfig.DatabaseInUse, whereClause, lineConfig.DateTime)
-
-	// Log the full query for debugging
-	fmt.Printf("[DEBUG] BuildShiftQuery:\n  LineID: %s\n  Shift: %s\n  Date: %s\n  Query: %s\n",
-		lineID, shiftType, dateStr, query)
+	}
 
 	return query, nil
 }
@@ -268,8 +280,22 @@ func (qb *ProdQueryBuilder) BuildShiftQueryNOK(
 		}
 	}
 
-	// Build query with GROUP BY hour for hourly breakdown
-	query := fmt.Sprintf(`
+	query := ""
+
+	if lineConfig.QueryType == "gen5" {
+		// For GEN5, we use the specific GEN5 query builder
+		query = fmt.Sprintf(`
+		SELECT 
+			Hour as hora,
+			max(NOK) as prod,
+			model
+		FROM [%s]
+		%s
+		GROUP BY Hour, Model
+	`, lineConfig.DatabaseInUse, whereClause)
+	} else {
+		// Build query with GROUP BY hour for hourly breakdown
+		query = fmt.Sprintf(`
 		SELECT 
 			DATEPART(hh,%s) AS hora,
 			COUNT(%s) AS prod
@@ -278,10 +304,7 @@ func (qb *ProdQueryBuilder) BuildShiftQueryNOK(
 		GROUP BY DATEPART(hh,%s)
 		ORDER BY hora;
 	`, lineConfig.DateTime, lineConfig.ID, lineConfig.DatabaseInUse, whereClause, lineConfig.DateTime)
-
-	// Log the full query for debugging
-	fmt.Printf("[DEBUG] BuildShiftQueryNOK:\n  LineID: %s\n  Shift: %s\n  Date: %s\n  Query: %s\n",
-		lineID, shiftType, dateStr, query)
+	}
 
 	return query, nil
 }
