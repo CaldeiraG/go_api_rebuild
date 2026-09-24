@@ -110,17 +110,17 @@ For each date in the range, the endpoint:
 
 ### Shift Periods
 
-- **Shift 1:** Previous day 01:00 to current day 01:00
-- **Shift 2:** Current day 01:00 to next day 01:00
-- **Shift 3:** Next day 01:00 to day after 01:00
+- **Shift 1 (1T):** 08:00 to 16:30 (same day)
+- **Shift 2 (2T):** 16:30 to 01:00 (next day)
+- **Shift 3 (3T):** 01:00 to 08:00 (next day)
 
-### Example Query (Shift 2)
+### Example Query (Shift 2 - 16:30 to 01:00)
 ```sql
 SELECT 
     MAX(DATEPART(hh,Data)) AS hora,
     COUNT(ID) AS prod
 FROM [GEN3_Clone].[dbo].[GEN3_LINE_A_PROD]
-WHERE Data >= '2026-09-21 01:00' AND Data < '2026-09-22 01:00'
+WHERE Data >= '2026-09-21 16:30' AND Data < '2026-09-22 01:00'
     AND PALETE_DB_SN_SNCH like '$modelFAssy%' AND 
     PALETE_DB_STATUS_OK_NOK like '1'
 ```
