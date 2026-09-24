@@ -82,38 +82,48 @@ func DailyProduction(w http.ResponseWriter, r *http.Request) {
 				continue
 			}
 
-			// Execute query - get hora and prod
-			var hora int
-			var prod sql.NullInt64
-			err = config.DB.QueryRow(query).Scan(&hora, &prod)
+			// Execute query - get hora and prod for ALL hours
+			rows, err := config.DB.Query(query)
 			if err != nil {
 				results = append(results, dailyProductionResponse{
 					LineID: lineID,
 					Date:   date.Format("2006-01-02"),
 					Hora:   0,
 					Prod:   0,
-					Shift:  "shift2",
+					Shift:  string(shift.ShiftType),
 				})
 				continue
 			}
 
-			if prod.Valid {
-				results = append(results, dailyProductionResponse{
-					LineID: lineID,
-					Date:   date.Format("2006-01-02"),
-					Hora:   hora,
-					Prod:   prod.Int64,
-					Shift:  string(shift.ShiftType),
-				})
-			} else {
-				results = append(results, dailyProductionResponse{
-					LineID: lineID,
-					Date:   date.Format("2006-01-02"),
-					Hora:   0,
-					Prod:   0,
-					Shift:  string(shift.ShiftType),
-				})
+			// Iterate through all rows
+			for rows.Next() {
+				var hora int
+				var prod sql.NullInt64
+				err = rows.Scan(&hora, &prod)
+				if err != nil {
+					continue
+				}
+
+				if prod.Valid {
+					results = append(results, dailyProductionResponse{
+						LineID: lineID,
+						Date:   date.Format("2006-01-02"),
+						Hora:   hora,
+						Prod:   prod.Int64,
+						Shift:  string(shift.ShiftType),
+					})
+				} else {
+					results = append(results, dailyProductionResponse{
+						LineID: lineID,
+						Date:   date.Format("2006-01-02"),
+						Hora:   hora,
+						Prod:   0,
+						Shift:  string(shift.ShiftType),
+					})
+				}
 			}
+
+			rows.Close()
 		}
 	}
 
@@ -133,4 +143,3 @@ func DailyProduction(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 }
-
