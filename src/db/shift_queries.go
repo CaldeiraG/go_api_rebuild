@@ -224,7 +224,7 @@ func (qb *ProdQueryBuilder) BuildShiftQueryNOK(
 	if lineConfig.QueryType == "gen5" {
 		// GEN5 uses Timestamp
 		whereClause = fmt.Sprintf(
-			"WHERE Timestamp >= '%s 08:00' AND Timestamp < '%s 08:00'",
+			"Timestamp >= '%s 08:00' AND Timestamp < '%s 08:00'",
 			dateStr, dateStrEnd,
 		)
 	} else {
@@ -232,19 +232,19 @@ func (qb *ProdQueryBuilder) BuildShiftQueryNOK(
 		if startHour == 1 && endHour == 8 {
 			// Shift 3: 01:00 to 08:00
 			whereClause = fmt.Sprintf(
-				"WHERE %s >= '%s 01:00' AND %s < '%s 08:00'",
+				"%s >= '%s 01:00' AND %s < '%s 08:00'",
 				lineConfig.DateTime, dateStr, lineConfig.DateTime, dateStr,
 			)
 		} else if startHour == 16 && endHour == 1 {
 			// Shift 2: 16:30 to 01:00
 			whereClause = fmt.Sprintf(
-				"WHERE %s >= '%s 16:30' AND %s < '%s 01:00'",
+				"%s >= '%s 16:30' AND %s < '%s 01:00'",
 				lineConfig.DateTime, dateStr, lineConfig.DateTime, dateStrEnd,
 			)
 		} else {
 			// Shift 1: 08:00 to 16:30
 			whereClause = fmt.Sprintf(
-				"WHERE %s >= '%s 08:00' AND %s < '%s 16:30'",
+				"%s >= '%s 08:00' AND %s < '%s 16:30'",
 				lineConfig.DateTime, dateStr, lineConfig.DateTime, dateStr,
 			)
 		}

@@ -113,7 +113,7 @@
     "ID": "MINDEX",
     "dateTime": "TIME_STAMP",
     "param": "AND REJECTED = 0 and WRITE_STATION = 990",
-    "paramRej": "",
+    "paramRej": "AND REJECTED = 1",
     "paramModel": "",
     "model_id": "END_ITEM_PART_NUMBER",
     "shiftStart": "08:00",
