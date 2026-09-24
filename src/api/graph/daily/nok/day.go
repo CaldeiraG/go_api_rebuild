@@ -4,10 +4,11 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
-	config "github.com/caldeirag/go-api/src/db"
-	"github.com/go-chi/chi/v5"
 	"net/http"
 	"time"
+
+	config "github.com/caldeirag/go-api/src/db"
+	"github.com/go-chi/chi/v5"
 )
 
 // Import shift constants from db package
@@ -71,6 +72,10 @@ func DailyNOK(w http.ResponseWriter, r *http.Request) {
 
 	// Build queries for all shifts (Shift 1, 2, 3) using ParamRej for NOK
 	var results []dailyNOKResponse
+
+	for date := startDate; !date.After(endDate); date = date.AddDate(0, 0, 1) {
+		// Build queries for all 3 shifts
+		shifts := qb.GetAllShiftsForDate(date)
 
 		for _, shift := range shifts {
 			query, err := qb.GetShiftProduction(lineID, date, shift.ShiftType)
