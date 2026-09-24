@@ -9,9 +9,9 @@ import (
 type ShiftType string
 
 const (
-	Shift1 ShiftType = "shift1" // 01:00 - 01:00 (24h period 1)
-	Shift2 ShiftType = "shift2" // 01:00 - 01:00 (24h period 2)
-	Shift3 ShiftType = "shift3" // 01:00 - 01:00 (24h period 3)
+	Shift1 ShiftType = "1T" // 08:00 - 16:30 same day
+	Shift2 ShiftType = "2T" // 16:30 - 01:00 next day
+	Shift3 ShiftType = "3T" // 01:00 - 08:00 next day
 )
 
 // ShiftConfig holds shift-specific configuration
@@ -25,25 +25,25 @@ type ShiftConfig struct {
 func GetShiftConfig(shiftType ShiftType, date time.Time) ShiftConfig {
 	switch shiftType {
 	case Shift1:
-		// Shift 1: 01:00 previous day to 01:00 today
+		// Shift 1: 08:00 to 16:30 same day
 		return ShiftConfig{
 			ShiftType: Shift1,
-			StartTime: time.Date(date.Year(), date.Month(), date.Day()-1, 1, 0, 0, 0, date.Location()),
-			EndTime:   time.Date(date.Year(), date.Month(), date.Day(), 1, 0, 0, 0, date.Location()),
+			StartTime: time.Date(date.Year(), date.Month(), date.Day(), 8, 0, 0, 0, date.Location()),
+			EndTime:   time.Date(date.Year(), date.Month(), date.Day(), 16, 30, 0, 0, date.Location()),
 		}
 	case Shift2:
-		// Shift 2: 01:00 today to 01:00 next day
+		// Shift 2: 16:30 to 01:00 next day
 		return ShiftConfig{
 			ShiftType: Shift2,
-			StartTime: time.Date(date.Year(), date.Month(), date.Day(), 1, 0, 0, 0, date.Location()),
+			StartTime: time.Date(date.Year(), date.Month(), date.Day(), 16, 30, 0, 0, date.Location()),
 			EndTime:   time.Date(date.Year(), date.Month(), date.Day()+1, 1, 0, 0, 0, date.Location()),
 		}
 	case Shift3:
-		// Shift 3: 01:00 next day to 01:00 2 days later
+		// Shift 3: 01:00 to 08:00 next day
 		return ShiftConfig{
 			ShiftType: Shift3,
 			StartTime: time.Date(date.Year(), date.Month(), date.Day()+1, 1, 0, 0, 0, date.Location()),
-			EndTime:   time.Date(date.Year(), date.Month(), date.Day()+2, 1, 0, 0, 0, date.Location()),
+			EndTime:   time.Date(date.Year(), date.Month(), date.Day()+1, 8, 0, 0, 0, date.Location()),
 		}
 	default:
 		return ShiftConfig{}
@@ -72,38 +72,58 @@ func (qb *ProdQueryBuilder) BuildShiftQuery(
 		return "", fmt.Errorf("line ID %s not found in configuration", lineID)
 	}
 
-	// Calculate shift time range (01:00 to 01:00 next day)
-	// Each shift is 24 hours from 01:00 to 01:00
-	// Shift 1: -1 day, Shift 2: 0 day, Shift 3: +1 day
-	dateOffset := 0
-	if shiftType == "shift1" {
-		dateOffset = -1
-	} else if shiftType == "shift3" {
-		dateOffset = 1
+	// Calculate shift time range based on shift type
+	var startHour, endHour int
+	
+	switch shiftType {
+	case Shift1:
+		// 08:00 to 16:30 same day
+		startHour = 8
+		endHour = 16
+	case Shift2:
+		// 16:30 to 01:00 next day
+		startHour = 16
+		endHour = 1
+	case Shift3:
+		// 01:00 to 08:00 next day
+		startHour = 1
+		endHour = 8
 	}
 
-	startDate := date.AddDate(0, 0, dateOffset)
-	endDate := date.AddDate(0, 0, dateOffset+1)
-
 	// Format date for SQL
-	dateStr := startDate.Format("2006-01-02")
-	dateStrEnd := endDate.Format("2006-01-02")
+	dateStr := date.Format("2006-01-02")
+	dateStrEnd := date.AddDate(0, 0, 1).Format("2006-01-02")
 
-	// Build WHERE clause
+	// Build WHERE clause with exact shift times
 	var whereClause string
 
 	if lineConfig.QueryType == "gen5" {
 		// GEN5 uses Timestamp
 		whereClause = fmt.Sprintf(
-			"WHERE Timestamp >= '%s 01:00' AND Timestamp < '%s 01:00'",
+			"WHERE Timestamp >= '%s 08:00' AND Timestamp < '%s 08:00'",
 			dateStr, dateStrEnd,
 		)
 	} else {
-		// Standard lines use DateTime
-		whereClause = fmt.Sprintf(
-			"WHERE %s >= '%s 01:00' AND %s < '%s 01:00'",
-			lineConfig.DateTime, dateStr, lineConfig.DateTime, dateStrEnd,
-		)
+		// Standard lines use DateTime with exact shift times
+		if startHour == 1 && endHour == 8 {
+			// Shift 3: 01:00 to 08:00
+			whereClause = fmt.Sprintf(
+				"WHERE %s >= '%s 01:00' AND %s < '%s 08:00'",
+				lineConfig.DateTime, dateStr, lineConfig.DateTime, dateStrEnd,
+			)
+		} else if startHour == 16 && endHour == 1 {
+			// Shift 2: 16:30 to 01:00
+			whereClause = fmt.Sprintf(
+				"WHERE %s >= '%s 16:30' AND %s < '%s 01:00'",
+				lineConfig.DateTime, dateStr, lineConfig.DateTime, dateStrEnd,
+			)
+		} else {
+			// Shift 1: 08:00 to 16:30
+			whereClause = fmt.Sprintf(
+				"WHERE %s >= '%s 08:00' AND %s < '%s 16:30'",
+				lineConfig.DateTime, dateStr, lineConfig.DateTime, dateStrEnd,
+			)
+		}
 	}
 
 	// Add paramModel if exists

@@ -11,11 +11,11 @@ import (
 )
 
 type dailyProductionResponse struct {
-	LineID   string  `json:"line_id"`
-	Date     string  `json:"date"`
-	Hora     int     `json:"hora"`
-	Prod     int64   `json:"prod"`
-	Error    string  `json:"error,omitempty"`
+	LineID string `json:"line_id"`
+	Date   string `json:"date"`
+	Hora   int    `json:"hora"`
+	Prod   int64  `json:"prod"`
+	Shift  string `json:"shift"`
 }
 
 // DailyProduction handles the daily production endpoint
@@ -25,10 +25,6 @@ func DailyProduction(w http.ResponseWriter, r *http.Request) {
 	lineID := chi.URLParam(r, "line_id")
 	startDateStr := r.URL.Query().Get("startDate")
 	endDateStr := r.URL.Query().Get("endDate")
-
-	fmt.Printf(lineID);
-	fmt.Printf(startDateStr);
-	fmt.Printf(endDateStr);
 
 	// Validate parameters
 	if lineID == "" || startDateStr == "" || endDateStr == "" {
@@ -79,12 +75,14 @@ func DailyProduction(w http.ResponseWriter, r *http.Request) {
 				results = append(results, dailyProductionResponse{
 					LineID: lineID,
 					Date:   date.Format("2006-01-02"),
-					Error:  fmt.Sprintf("Failed to build query for shift %s: %v", shift.ShiftType, err),
+					Hora:   0,
+					Prod:   0,
+					Shift:  "shift2",
 				})
 				continue
 			}
 
-			// Execute query
+			// Execute query - get hora and prod
 			var hora int
 			var prod sql.NullInt64
 			err = config.DB.QueryRow(query).Scan(&hora, &prod)
@@ -92,7 +90,9 @@ func DailyProduction(w http.ResponseWriter, r *http.Request) {
 				results = append(results, dailyProductionResponse{
 					LineID: lineID,
 					Date:   date.Format("2006-01-02"),
-					Error:  fmt.Sprintf("Failed to execute query: %v", err),
+					Hora:   0,
+					Prod:   0,
+					Shift:  "shift2",
 				})
 				continue
 			}
@@ -103,13 +103,15 @@ func DailyProduction(w http.ResponseWriter, r *http.Request) {
 					Date:   date.Format("2006-01-02"),
 					Hora:   hora,
 					Prod:   prod.Int64,
+					Shift:  string(shift.ShiftType),
 				})
 			} else {
 				results = append(results, dailyProductionResponse{
 					LineID: lineID,
 					Date:   date.Format("2006-01-02"),
-					Hora:   hora,
+					Hora:   0,
 					Prod:   0,
+					Shift:  string(shift.ShiftType),
 				})
 			}
 		}

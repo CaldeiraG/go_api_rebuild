@@ -34,19 +34,22 @@ curl "http://localhost:4000/graph/api/daily/45?startDate=2026-09-21&endDate=2026
     "line_id": "45",
     "date": "2026-09-21",
     "hora": 9,
-    "prod": 125
+    "prod": 125,
+    "shift": "shift2"
   },
   {
     "line_id": "45",
     "date": "2026-09-21",
     "hora": 10,
-    "prod": 156
+    "prod": 156,
+    "shift": "shift2"
   },
   {
     "line_id": "45",
     "date": "2026-09-21",
     "hora": 11,
-    "prod": 143
+    "prod": 143,
+    "shift": "shift2"
   }
 ]
 ```
@@ -103,24 +106,31 @@ For each date in the range, the endpoint:
 1. Builds 3 shift queries (Shift 1, 2, 3)
 2. Each shift covers a 24-hour period from 01:00 to 01:00
 3. Executes the query using `config.DB`
-4. Returns results in the format: `hora, prod`
+4. Returns results in the format: `hora, prod` per hour
 
 ### Shift Periods
 
-- **Shift 1:** Previous day 01:00 to current day 01:00
-- **Shift 2:** Current day 01:00 to next day 01:00
-- **Shift 3:** Next day 01:00 to day after 01:00
+- **Shift 1 (1T):** 08:00 to 16:30 (same day)
+- **Shift 2 (2T):** 16:30 to 01:00 (next day)
+- **Shift 3 (3T):** 01:00 to 08:00 (next day)
 
-### Example Query (Shift 2)
+### Example Query (Shift 2 - 16:30 to 01:00)
 ```sql
 SELECT 
     MAX(DATEPART(hh,Data)) AS hora,
     COUNT(ID) AS prod
 FROM [GEN3_Clone].[dbo].[GEN3_LINE_A_PROD]
-WHERE Data >= '2026-09-21 01:00' AND Data < '2026-09-22 01:00'
+WHERE Data >= '2026-09-21 16:30' AND Data < '2026-09-22 01:00'
     AND PALETE_DB_SN_SNCH like '$modelFAssy%' AND 
     PALETE_DB_STATUS_OK_NOK like '1'
 ```
+
+### Response Format
+
+Each record represents **one hour** of production data:
+- `hora`: Hour of day (0-23)
+- `prod`: Production count for that hour
+- `shift`: Shift identifier (shift1, shift2, shift3)
 
 ## Notes
 
