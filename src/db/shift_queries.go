@@ -100,7 +100,7 @@ func (qb *ProdQueryBuilder) BuildShiftQuery(
 	if lineConfig.QueryType == "gen5" {
 		// GEN5 uses Timestamp
 		whereClause = fmt.Sprintf(
-			"WHERE Timestamp >= '%s 08:00' AND Timestamp < '%s 08:00'",
+			"Timestamp >= '%s 00:00' AND Timestamp < '%s 00:00'",
 			dateStr, dateStrEnd,
 		)
 	} else {

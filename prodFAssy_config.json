@@ -397,7 +397,7 @@
     "name": "GEN5 LineA",
     "databaseInUse": "[GEN5ProdStats].[dbo].[Production]",
     "dateTime": "Timestamp",
-    "param": "Line = 'A'",
+    "param": "AND Line = 'A'",
     "queryType": "gen5",
     "shiftStart": "08:00",
     "shiftEnd": "16:30"
@@ -406,25 +406,25 @@
     "name": "GEN5 LineB",
     "databaseInUse": "[GEN5ProdStats].[dbo].[Production]",
     "dateTime": "Timestamp",
-    "param": "Line = 'B'",
+    "param": "AND Line = 'B'",
     "queryType": "gen5",
     "shiftStart": "08:00",
     "shiftEnd": "16:30"
   },
   "1109": {
-    "name": "GEN5 LineB",
+    "name": "GEN5 LineC1",
     "databaseInUse": "[GEN5ProdStats].[dbo].[Production]",
     "dateTime": "Timestamp",
-    "param": "Line = 'B'",
+    "param": "AND Line = 'C1'",
     "queryType": "gen5",
     "shiftStart": "08:00",
     "shiftEnd": "16:30"
   },
   "1110": {
-    "name": "GEN5 LineC",
+    "name": "GEN5 LineC2",
     "databaseInUse": "[GEN5ProdStats].[dbo].[Production]",
     "dateTime": "Timestamp",
-    "param": "Line = 'C'",
+    "param": "AND Line = 'C2'",
     "queryType": "gen5",
     "shiftStart": "08:00",
     "shiftEnd": "16:30"
@@ -433,7 +433,7 @@
     "name": "GEN5 LineD",
     "databaseInUse": "[GEN5ProdStats].[dbo].[Production]",
     "dateTime": "Timestamp",
-    "param": "Line = 'D'",
+    "param": "AND Line = 'D'",
     "queryType": "gen5",
     "shiftStart": "08:00",
     "shiftEnd": "16:30"
@@ -451,7 +451,7 @@
     "name": "GEN5 BracketBMW",
     "databaseInUse": "[GEN5ProdStats].[dbo].[Production]",
     "dateTime": "Timestamp",
-    "param": "Line = 'E'",
+    "param": "AND Line = 'E'",
     "queryType": "gen5",
     "shiftStart": "08:00",
     "shiftEnd": "16:30"
