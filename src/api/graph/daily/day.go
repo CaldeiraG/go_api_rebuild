@@ -4,10 +4,11 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
-	config "github.com/caldeirag/go-api/src/db"
-	"github.com/go-chi/chi/v5"
 	"net/http"
 	"time"
+
+	config "github.com/caldeirag/go-api/src/db"
+	"github.com/go-chi/chi/v5"
 )
 
 // Import shift constants from db package
@@ -73,95 +74,40 @@ func DailyProduction(w http.ResponseWriter, r *http.Request) {
 	var results []dailyProductionResponse
 
 	for date := startDate; !date.After(endDate); date = date.AddDate(0, 0, 1) {
-		// For each date, we query Shift 1 (08:00-16:30) which is within the date
-		// Shift 2 and 3 extend into the next day, so we only query them for multi-day ranges
-		
-		// Query Shift 1 for this date (08:00 to 16:30 same day)
-		query1, err := qb.GetShiftProduction(lineID, date, Shift1)
-		if err != nil {
-			results = append(results, dailyProductionResponse{
-				LineID: lineID,
-				Date:   date.Format("2006-01-02"),
-				Hora:   0,
-				Prod:   0,
-				Shift:  string(Shift1),
-			})
-			continue
-		}
+		// Build queries for all 3 shifts
+		shifts := qb.GetAllShiftsForDate(date)
 
-		// Execute query for Shift 1
-		rows1, err := config.DB.Query(query1)
-		if err != nil {
-			results = append(results, dailyProductionResponse{
-				LineID: lineID,
-				Date:   date.Format("2006-01-02"),
-				Hora:   0,
-				Prod:   0,
-				Shift:  string(Shift1),
-			})
-			continue
-		}
-
-		// Iterate through all rows for Shift 1
-		for rows1.Next() {
-			var hora int
-			var prod sql.NullInt64
-			err = rows1.Scan(&hora, &prod)
-			if err != nil {
-				continue
-			}
-
-			if prod.Valid {
-				results = append(results, dailyProductionResponse{
-					LineID: lineID,
-					Date:   date.Format("2006-01-02"),
-					Hora:   hora,
-					Prod:   prod.Int64,
-					Shift:  string(Shift1),
-				})
-			} else {
-				results = append(results, dailyProductionResponse{
-					LineID: lineID,
-					Date:   date.Format("2006-01-02"),
-					Hora:   hora,
-					Prod:   0,
-					Shift:  string(Shift1),
-				})
-			}
-		}
-		rows1.Close()
-
-		// For Shift 2 (16:30 to 01:00 next day) - only query if endDate allows
-		// Shift 2 ends on the NEXT day, so check if we have space for it
-		if !date.Equal(endDate) {
-			query2, err := qb.GetShiftProduction(lineID, date, Shift2)
+		for _, shift := range shifts {
+			query, err := qb.GetShiftProduction(lineID, date, shift.ShiftType)
 			if err != nil {
 				results = append(results, dailyProductionResponse{
 					LineID: lineID,
 					Date:   date.Format("2006-01-02"),
 					Hora:   0,
 					Prod:   0,
-					Shift:  string(Shift2),
+					Shift:  string(shift.ShiftType),
 				})
 				continue
 			}
 
-			rows2, err := config.DB.Query(query2)
+			// Execute query - get hora and prod for ALL hours
+			rows, err := config.DB.Query(query)
 			if err != nil {
 				results = append(results, dailyProductionResponse{
 					LineID: lineID,
 					Date:   date.Format("2006-01-02"),
 					Hora:   0,
 					Prod:   0,
-					Shift:  string(Shift2),
+					Shift:  string(shift.ShiftType),
 				})
 				continue
 			}
 
-			for rows2.Next() {
+			// Iterate through all rows
+			for rows.Next() {
 				var hora int
 				var prod sql.NullInt64
-				err = rows2.Scan(&hora, &prod)
+				err = rows.Scan(&hora, &prod)
 				if err != nil {
 					continue
 				}
@@ -172,7 +118,7 @@ func DailyProduction(w http.ResponseWriter, r *http.Request) {
 						Date:   date.Format("2006-01-02"),
 						Hora:   hora,
 						Prod:   prod.Int64,
-						Shift:  string(Shift2),
+						Shift:  string(shift.ShiftType),
 					})
 				} else {
 					results = append(results, dailyProductionResponse{
@@ -180,66 +126,12 @@ func DailyProduction(w http.ResponseWriter, r *http.Request) {
 						Date:   date.Format("2006-01-02"),
 						Hora:   hora,
 						Prod:   0,
-						Shift:  string(Shift2),
+						Shift:  string(shift.ShiftType),
 					})
 				}
 			}
-			rows2.Close()
-		}
 
-		// For Shift 3 (01:00 to 08:00 next day) - only query if there's room for next day
-		if !date.Equal(endDate) && date.AddDate(0, 0, 1).Before(endDate.AddDate(0, 0, 1)) {
-			query3, err := qb.GetShiftProduction(lineID, date, Shift3)
-			if err != nil {
-				results = append(results, dailyProductionResponse{
-					LineID: lineID,
-					Date:   date.Format("2006-01-02"),
-					Hora:   0,
-					Prod:   0,
-					Shift:  string(Shift3),
-				})
-				continue
-			}
-
-			rows3, err := config.DB.Query(query3)
-			if err != nil {
-				results = append(results, dailyProductionResponse{
-					LineID: lineID,
-					Date:   date.Format("2006-01-02"),
-					Hora:   0,
-					Prod:   0,
-					Shift:  string(Shift3),
-				})
-				continue
-			}
-
-			for rows3.Next() {
-				var hora int
-				var prod sql.NullInt64
-				err = rows3.Scan(&hora, &prod)
-				if err != nil {
-					continue
-				}
-
-				if prod.Valid {
-					results = append(results, dailyProductionResponse{
-						LineID: lineID,
-						Date:   date.Format("2006-01-02"),
-						Hora:   hora,
-						Prod:   prod.Int64,
-						Shift:  string(Shift3),
-					})
-				} else {
-					results = append(results, dailyProductionResponse{
-						LineID: lineID,
-						Date:   date.Format("2006-01-02"),
-						Hora:   hora,
-						Prod:   0,
-						Shift:  string(Shift3),
-					})
-				}
-			}
-			rows3.Close()
+			rows.Close()
 		}
 	}
 
