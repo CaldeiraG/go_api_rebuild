@@ -162,13 +162,128 @@ func (qb *ProdQueryBuilder) BuildShiftQuery(
 	return query, nil
 }
 
-// GetShiftProduction builds production query for a 24-hour shift
+// GetShiftProduction builds production query for a 24-hour shift (using param for OK)
 func (qb *ProdQueryBuilder) GetShiftProduction(
 	lineID string,
 	date time.Time,
 	shiftType ShiftType,
 ) (string, error) {
 	return qb.BuildShiftQuery(lineID, date, shiftType)
+}
+
+// GetShiftProductionNOK builds NOK production query for a 24-hour shift (using paramRej)
+func (qb *ProdQueryBuilder) GetShiftProductionNOK(
+	lineID string,
+	date time.Time,
+	shiftType ShiftType,
+) (string, error) {
+	return qb.BuildShiftQueryNOK(lineID, date, shiftType)
+}
+
+// BuildShiftQueryNOK builds a NOK shift query using paramRej instead of param
+func (qb *ProdQueryBuilder) BuildShiftQueryNOK(
+	lineID string,
+	date time.Time,
+	shiftType ShiftType,
+) (string, error) {
+	configMap, err := qb.LoadConfig()
+	if err != nil {
+		return "", fmt.Errorf("failed to load config: %w", err)
+	}
+
+	lineConfig, exists := configMap[lineID]
+	if !exists {
+		return "", fmt.Errorf("line ID %s not found in configuration", lineID)
+	}
+
+	// Calculate shift time range based on shift type
+	var startHour, endHour int
+	
+	switch shiftType {
+	case Shift1:
+		// 08:00 to 16:30 same day
+		startHour = 8
+		endHour = 16
+	case Shift2:
+		// 16:30 to 01:00 next day
+		startHour = 16
+		endHour = 1
+	case Shift3:
+		// 01:00 to 08:00 next day
+		startHour = 1
+		endHour = 8
+	}
+
+	// Format date for SQL
+	dateStr := date.Format("2006-01-02")
+	dateStrEnd := date.AddDate(0, 0, 1).Format("2006-01-02")
+
+	// Build WHERE clause with exact shift times using paramRej
+	var whereClause string
+
+	if lineConfig.QueryType == "gen5" {
+		// GEN5 uses Timestamp
+		whereClause = fmt.Sprintf(
+			"WHERE Timestamp >= '%s 08:00' AND Timestamp < '%s 08:00'",
+			dateStr, dateStrEnd,
+		)
+	} else {
+		// Standard lines use DateTime with exact shift times
+		if startHour == 1 && endHour == 8 {
+			// Shift 3: 01:00 to 08:00
+			whereClause = fmt.Sprintf(
+				"WHERE %s >= '%s 01:00' AND %s < '%s 08:00'",
+				lineConfig.DateTime, dateStr, lineConfig.DateTime, dateStrEnd,
+			)
+		} else if startHour == 16 && endHour == 1 {
+			// Shift 2: 16:30 to 01:00
+			whereClause = fmt.Sprintf(
+				"WHERE %s >= '%s 16:30' AND %s < '%s 01:00'",
+				lineConfig.DateTime, dateStr, lineConfig.DateTime, dateStrEnd,
+			)
+		} else {
+			// Shift 1: 08:00 to 16:30
+			whereClause = fmt.Sprintf(
+				"WHERE %s >= '%s 08:00' AND %s < '%s 16:30'",
+				lineConfig.DateTime, dateStr, lineConfig.DateTime, dateStrEnd,
+			)
+		}
+	}
+
+	// Add paramModel if exists
+	if lineConfig.ParamModel != "" {
+		whereClause += " " + lineConfig.ParamModel
+	}
+
+	// Add paramRej condition instead of param (for NOK/defects)
+	if lineConfig.ParamRej != "" {
+		whereClause += " " + lineConfig.ParamRej
+	}
+
+	// Add station filter if paramRejSta exists
+	if lineConfig.ParamRejSta != "" {
+		stationParam := lineConfig.ParamRejSta
+		if stationParam != "" {
+			whereClause += " " + stationParam
+		}
+	}
+
+	// Build query with GROUP BY hour for hourly breakdown
+	query := fmt.Sprintf(`
+		SELECT 
+			DATEPART(hh,%s) AS hora,
+			COUNT(%s) AS prod
+		FROM %s
+		WHERE %s
+		GROUP BY DATEPART(hh,%s)
+		ORDER BY hora;
+	`, lineConfig.DateTime, lineConfig.ID, lineConfig.DatabaseInUse, whereClause, lineConfig.DateTime)
+
+	// Log the full query for debugging
+	fmt.Printf("[DEBUG] BuildShiftQueryNOK:\n  LineID: %s\n  Shift: %s\n  Date: %s\n  Query: %s\n",
+		lineID, shiftType, dateStr, query)
+
+	return query, nil
 }
 
 // GetAllShiftsForDate returns all 3 shift periods for a date
