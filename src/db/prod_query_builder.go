@@ -6,25 +6,24 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
-	"time"
 )
 
 // ProdQueryConfig represents the configuration for a production line
 type ProdQueryConfig struct {
-	Name         string `json:"name"`
-	DatabaseInUse string `json:"databaseInUse"`
-	ID           string `json:"ID"`
-	DateTime     string `json:"dateTime"`
-	Param        string `json:"param"`
-	ParamRej     string `json:"paramRej"`
-	ParamModel   string `json:"paramModel"`
-	ModelID      string `json:"model_id"`
-	ParamRejSta  string `json:"paramRejSta"`
-	SpecialModel map[string]string `json:"specialModel,omitempty"`
-	Error        bool   `json:"error,omitempty"`
-	QueryType    string `json:"queryType,omitempty"` // "standard" or "gen5"
-	ShiftStart   string `json:"shiftStart"`
-	ShiftEnd     string `json:"shiftEnd"`
+	Name          string            `json:"name"`
+	DatabaseInUse string            `json:"databaseInUse"`
+	ID            string            `json:"ID"`
+	DateTime      string            `json:"dateTime"`
+	Param         string            `json:"param"`
+	ParamRej      string            `json:"paramRej"`
+	ParamModel    string            `json:"paramModel"`
+	ModelID       string            `json:"model_id"`
+	ParamRejSta   string            `json:"paramRejSta"`
+	SpecialModel  map[string]string `json:"specialModel,omitempty"`
+	Error         bool              `json:"error,omitempty"`
+	QueryType     string            `json:"queryType,omitempty"` // "standard" or "gen5"
+	ShiftStart    string            `json:"shiftStart"`
+	ShiftEnd      string            `json:"shiftEnd"`
 }
 
 // ProdQueryBuilder builds queries for production statistics
@@ -69,19 +68,19 @@ func (qb *ProdQueryBuilder) LoadConfig() (map[string]*ProdQueryConfig, error) {
 		}
 
 		cfg := &ProdQueryConfig{
-			Name:         "",
+			Name:          "",
 			DatabaseInUse: "",
-			ID:           "",
-			DateTime:     "",
-			Param:        "",
-			ParamRej:     "",
-			ParamModel:   "",
-			ModelID:      "",
-			ParamRejSta:  "",
-			Error:        false,
-			QueryType:    "",
-			ShiftStart:   "",
-			ShiftEnd:     "",
+			ID:            "",
+			DateTime:      "",
+			Param:         "",
+			ParamRej:      "",
+			ParamModel:    "",
+			ModelID:       "",
+			ParamRejSta:   "",
+			Error:         false,
+			QueryType:     "",
+			ShiftStart:    "",
+			ShiftEnd:      "",
 		}
 
 		// Safely extract fields - check both existence and type
@@ -160,86 +159,6 @@ func (qb *ProdQueryBuilder) LoadConfig() (map[string]*ProdQueryConfig, error) {
 	}
 
 	return result, nil
-}
-
-// BuildProdQuery constructs the production statistics query
-func (qb *ProdQueryBuilder) BuildProdQuery(
-	lineID string,
-	dataInit time.Time,
-	dataFinal time.Time,
-	station string,
-	models []string,
-) (*ProdQueryConfig, error) {
-	configMap, err := qb.LoadConfig()
-	if err != nil {
-		return nil, fmt.Errorf("failed to load config: %w", err)
-	}
-
-	lineConfig, exists := configMap[lineID]
-	if !exists {
-		return nil, fmt.Errorf("line ID %s not found in configuration", lineID)
-	}
-
-	// Handle special model logic (case 53 - Gen3.8 Inverter)
-	if lineConfig.QueryType == "" && len(lineConfig.SpecialModel) > 0 {
-		// Check for BMW/VW specific models
-		for modelName, modelPattern := range lineConfig.SpecialModel {
-			if contains(models, modelName) {
-				lineConfig.ParamModel = modelPattern
-				break
-			}
-		}
-	}
-
-	// Build WHERE clause for standard queries
-	dataInitStr := dataInit.Format("2006-01-02 15:04")
-	dataFinalStr := dataFinal.Format("2006-01-02 15:04")
-
-	whereParts := []string{
-		fmt.Sprintf("%s > '%s 00:00'", lineConfig.DateTime, dataInitStr),
-		fmt.Sprintf("%s < '%s 16:30'", lineConfig.DateTime, dataFinalStr),
-	}
-
-	// Add paramModel if exists and not empty
-	if lineConfig.ParamModel != "" {
-		whereParts = append(whereParts, lineConfig.ParamModel)
-	}
-
-	// Add param condition
-	if lineConfig.Param != "" {
-		whereParts = append(whereParts, lineConfig.Param)
-	}
-
-	// Build the final WHERE clause
-	whereClause := fmt.Sprintf("WHERE %s", joinStrings(whereParts, " AND "))
-
-	// Add station filter if paramRejSta exists
-	if station != "" && lineConfig.ParamRejSta != "" {
-		stationClause := fmt.Sprintf(lineConfig.ParamRejSta, station)
-		if stationClause != "" {
-			whereClause += " AND " + stationClause
-		}
-	}
-
-	// Construct the full SQL query
-	query := fmt.Sprintf(`
-		SET DATEFIRST 1; 
-		SELECT MAX(DATEPART(hh,%s)) AS hora, COUNT(%s) AS prod
-		FROM [%s]
-		%s
-		GROUP BY DATEPART(hh,%s);
-	`, lineConfig.DateTime, lineConfig.ID, lineConfig.DatabaseInUse, whereClause, lineConfig.DateTime)
-
-	// Log the query
-	fmt.Printf("[DEBUG] Building query for %s (%s):\n  Query: %s\n  Where: %s\n",
-		lineID, lineConfig.Name, query, whereClause)
-
-	return lineConfig, nil
-}
-
-// GetAllLines returns all available production lines
-func (qb *ProdQueryBuilder) GetAllLines() (map[string]*ProdQueryConfig, error) {
-	return qb.LoadConfig()
 }
 
 // contains checks if a slice contains a string
