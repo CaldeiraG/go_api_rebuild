@@ -75,7 +75,7 @@ func DailyNOK(w http.ResponseWriter, r *http.Request) {
 	for date := startDate; !date.After(endDate); date = date.AddDate(0, 0, 1) {
 		// For each date, we query Shift 1 (08:00-16:30) which is within the date
 		// Shift 2 and 3 extend into the next day, so we only query them for multi-day ranges
-
+		
 		// Query Shift 1 for this date (08:00 to 16:30 same day)
 		query1, err := qb.GetShiftProduction(lineID, date, Shift1)
 		if err != nil {
@@ -132,6 +132,7 @@ func DailyNOK(w http.ResponseWriter, r *http.Request) {
 		rows1.Close()
 
 		// For Shift 2 (16:30 to 01:00 next day) - only query if endDate allows
+		// Shift 2 ends on the NEXT day, so check if we have space for it
 		if !date.Equal(endDate) {
 			query2, err := qb.GetShiftProduction(lineID, date, Shift2)
 			if err != nil {
@@ -190,11 +191,25 @@ func DailyNOK(w http.ResponseWriter, r *http.Request) {
 		if !date.Equal(endDate) && date.AddDate(0, 0, 1).Before(endDate.AddDate(0, 0, 1)) {
 			query3, err := qb.GetShiftProduction(lineID, date, Shift3)
 			if err != nil {
+				results = append(results, dailyNOKResponse{
+					LineID: lineID,
+					Date:   date.Format("2006-01-02"),
+					Hora:   0,
+					Prod:   0,
+					Shift:  string(Shift3),
+				})
 				continue
 			}
 
 			rows3, err := config.DB.Query(query3)
 			if err != nil {
+				results = append(results, dailyNOKResponse{
+					LineID: lineID,
+					Date:   date.Format("2006-01-02"),
+					Hora:   0,
+					Prod:   0,
+					Shift:  string(Shift3),
+				})
 				continue
 			}
 

@@ -10,7 +10,7 @@ import (
 	"time"
 )
 
-// Import shift constants
+// Import shift constants from db package
 const (
 	Shift1 = config.Shift1
 	Shift2 = config.Shift2
@@ -191,11 +191,25 @@ func DailyProduction(w http.ResponseWriter, r *http.Request) {
 		if !date.Equal(endDate) && date.AddDate(0, 0, 1).Before(endDate.AddDate(0, 0, 1)) {
 			query3, err := qb.GetShiftProduction(lineID, date, Shift3)
 			if err != nil {
+				results = append(results, dailyProductionResponse{
+					LineID: lineID,
+					Date:   date.Format("2006-01-02"),
+					Hora:   0,
+					Prod:   0,
+					Shift:  string(Shift3),
+				})
 				continue
 			}
 
 			rows3, err := config.DB.Query(query3)
 			if err != nil {
+				results = append(results, dailyProductionResponse{
+					LineID: lineID,
+					Date:   date.Format("2006-01-02"),
+					Hora:   0,
+					Prod:   0,
+					Shift:  string(Shift3),
+				})
 				continue
 			}
 
