@@ -153,8 +153,8 @@ func (qb *ProdQueryBuilder) BuildShiftQuery(
 			Hour as hora,
 			max(OK) as prod,
 			model
-		FROM [%s]
-		%s
+		FROM %s
+		WHERE %s
 		GROUP BY Hour, Model
 	`, lineConfig.DatabaseInUse, whereClause)
 	} else {
@@ -294,8 +294,8 @@ func (qb *ProdQueryBuilder) BuildShiftQueryNOK(
 			Hour as hora,
 			max(NOK) as prod,
 			model
-		FROM [%s]
-		%s
+		FROM %s
+		WHERE %s
 		GROUP BY Hour, Model
 	`, lineConfig.DatabaseInUse, whereClause)
 	} else {
