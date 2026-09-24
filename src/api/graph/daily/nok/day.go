@@ -10,6 +10,13 @@ import (
 	"time"
 )
 
+// Import shift constants
+const (
+	Shift1 = config.Shift1
+	Shift2 = config.Shift2
+	Shift3 = config.Shift3
+)
+
 type dailyNOKResponse struct {
 	LineID string `json:"line_id"`
 	Date   string `json:"date"`
@@ -66,40 +73,94 @@ func DailyNOK(w http.ResponseWriter, r *http.Request) {
 	var results []dailyNOKResponse
 
 	for date := startDate; !date.After(endDate); date = date.AddDate(0, 0, 1) {
-		// Build queries for all 3 shifts
-		shifts := qb.GetAllShiftsForDate(date)
+		// For each date, we query Shift 1 (08:00-16:30) which is within the date
+		// Shift 2 and 3 extend into the next day, so we only query them for multi-day ranges
+		
+		// Query Shift 1 for this date (08:00 to 16:30 same day)
+		query1, err := qb.GetShiftProduction(lineID, date, Shift1)
+		if err != nil {
+			results = append(results, dailyNOKResponse{
+				LineID: lineID,
+				Date:   date.Format("2006-01-02"),
+				Hora:   0,
+				Prod:   0,
+				Shift:  string(Shift1),
+			})
+			continue
+		}
 
-		for _, shift := range shifts {
-			query, err := qb.GetShiftProduction(lineID, date, shift.ShiftType)
+		// Execute query for Shift 1
+		rows1, err := config.DB.Query(query1)
+		if err != nil {
+			results = append(results, dailyNOKResponse{
+				LineID: lineID,
+				Date:   date.Format("2006-01-02"),
+				Hora:   0,
+				Prod:   0,
+				Shift:  string(Shift1),
+			})
+			continue
+		}
+
+		// Iterate through all rows for Shift 1
+		for rows1.Next() {
+			var hora int
+			var prod sql.NullInt64
+			err = rows1.Scan(&hora, &prod)
+			if err != nil {
+				continue
+			}
+
+			if prod.Valid {
+				results = append(results, dailyNOKResponse{
+					LineID: lineID,
+					Date:   date.Format("2006-01-02"),
+					Hora:   hora,
+					Prod:   prod.Int64,
+					Shift:  string(Shift1),
+				})
+			} else {
+				results = append(results, dailyNOKResponse{
+					LineID: lineID,
+					Date:   date.Format("2006-01-02"),
+					Hora:   hora,
+					Prod:   0,
+					Shift:  string(Shift1),
+				})
+			}
+		}
+		rows1.Close()
+
+		// For Shift 2 (16:30 to 01:00 next day) - only query if endDate allows
+		if !date.Equal(endDate) {
+			query2, err := qb.GetShiftProduction(lineID, date, Shift2)
 			if err != nil {
 				results = append(results, dailyNOKResponse{
 					LineID: lineID,
 					Date:   date.Format("2006-01-02"),
 					Hora:   0,
 					Prod:   0,
-					Shift:  string(shift.ShiftType),
+					Shift:  string(Shift2),
 				})
 				continue
 			}
 
-			// Execute query - get hora and prod for ALL hours
-			rows, err := config.DB.Query(query)
+			rows2, err := config.DB.Query(query2)
 			if err != nil {
 				results = append(results, dailyNOKResponse{
 					LineID: lineID,
 					Date:   date.Format("2006-01-02"),
 					Hora:   0,
 					Prod:   0,
-					Shift:  string(shift.ShiftType),
+					Shift:  string(Shift2),
 				})
 				continue
 			}
 
-			// Iterate through all rows
-			for rows.Next() {
+			for rows2.Next() {
 				var hora int
 				var prod sql.NullInt64
-				err = rows.Scan(&hora, &prod)
+				err = rows2.Scan(&hora, &prod)
 				if err != nil {
 					continue
 				}
@@ -110,7 +171,7 @@ func DailyNOK(w http.ResponseWriter, r *http.Request) {
 						Date:   date.Format("2006-01-02"),
 						Hora:   hora,
 						Prod:   prod.Int64,
-						Shift:  string(shift.ShiftType),
+						Shift:  string(Shift2),
 					})
 				} else {
 					results = append(results, dailyNOKResponse{
@@ -118,12 +179,52 @@ func DailyNOK(w http.ResponseWriter, r *http.Request) {
 						Date:   date.Format("2006-01-02"),
 						Hora:   hora,
 						Prod:   0,
-						Shift:  string(shift.ShiftType),
+						Shift:  string(Shift2),
 					})
 				}
 			}
+			rows2.Close()
+		}
 
-			rows.Close()
+		// For Shift 3 (01:00 to 08:00 next day) - only query if there's room for next day
+		if !date.Equal(endDate) && date.AddDate(0, 0, 1).Before(endDate.AddDate(0, 0, 1)) {
+			query3, err := qb.GetShiftProduction(lineID, date, Shift3)
+			if err != nil {
+				continue
+			}
+
+			rows3, err := config.DB.Query(query3)
+			if err != nil {
+				continue
+			}
+
+			for rows3.Next() {
+				var hora int
+				var prod sql.NullInt64
+				err = rows3.Scan(&hora, &prod)
+				if err != nil {
+					continue
+				}
+
+				if prod.Valid {
+					results = append(results, dailyNOKResponse{
+						LineID: lineID,
+						Date:   date.Format("2006-01-02"),
+						Hora:   hora,
+						Prod:   prod.Int64,
+						Shift:  string(Shift3),
+					})
+				} else {
+					results = append(results, dailyNOKResponse{
+						LineID: lineID,
+						Date:   date.Format("2006-01-02"),
+						Hora:   hora,
+						Prod:   0,
+						Shift:  string(Shift3),
+					})
+				}
+			}
+			rows3.Close()
 		}
 	}
 
@@ -142,34 +243,4 @@ func DailyNOK(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte(fmt.Sprintf(`{"error": "Failed to encode response"}`)))
 		return
 	}
-}
-
-// shiftsOverlap checks if a shift time range overlaps with the requested date range
-func shiftsOverlap(startTime, endTime, startDate, endDate time.Time) bool {
-	// Convert to comparable timestamps
-	start := startTime.Format("2006-01-02 15:04:00")
-	end := endTime.Format("2006-01-02 15:04:00")
-	dateStart := startDate.Format("2006-01-02")
-	dateEnd := endDate.Format("2006-01-02")
-
-	// Check if shift range overlaps with date range
-	shiftStart := startTime.Format("15:04")
-	shiftEnd := endTime.Format("15:04")
-
-	// If shift is on the same day or within date range
-	if startTime.Format("2006-01-02") >= dateStart && endTime.Format("2006-01-02") <= dateEnd {
-		return true
-	}
-
-	// If shift crosses dates (e.g., 22:00 to 02:00)
-	if startTime.Before(endDate) && endTime.After(startDate) {
-		return true
-	}
-
-	// If shift starts within the date range
-	if startTime.After(startDate) && startTime.Before(endDate) {
-		return true
-	}
-
-	return false
 }
