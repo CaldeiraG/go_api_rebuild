@@ -10,7 +10,7 @@ import (
 	"time"
 )
 
-// Import shift constants
+// Import shift constants from db package
 const (
 	Shift1 = config.Shift1
 	Shift2 = config.Shift2
@@ -75,7 +75,7 @@ func DailyNOK(w http.ResponseWriter, r *http.Request) {
 	for date := startDate; !date.After(endDate); date = date.AddDate(0, 0, 1) {
 		// For each date, we query Shift 1 (08:00-16:30) which is within the date
 		// Shift 2 and 3 extend into the next day, so we only query them for multi-day ranges
-		
+
 		// Query Shift 1 for this date (08:00 to 16:30 same day)
 		query1, err := qb.GetShiftProduction(lineID, date, Shift1)
 		if err != nil {
