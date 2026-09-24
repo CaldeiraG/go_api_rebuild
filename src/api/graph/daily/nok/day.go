@@ -77,7 +77,7 @@ func DailyNOK(w http.ResponseWriter, r *http.Request) {
 					Date:   date.Format("2006-01-02"),
 					Hora:   0,
 					Prod:   0,
-					Shift:  "shift2",
+					Shift:  string(shift.ShiftType),
 				})
 				continue
 			}
