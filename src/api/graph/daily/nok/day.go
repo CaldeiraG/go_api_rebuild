@@ -87,7 +87,7 @@ func DailyNOK(w http.ResponseWriter, r *http.Request) {
 
 	for date := startDate; !date.After(endDate); date = date.AddDate(0, 0, 1) {
 		// Build queries for all 3 shifts
-		shifts := qb.GetAllShiftsForDate(date)
+		shifts := qb.GetAllShiftsForDate(date, lineID)
 
 		for _, shift := range shifts {
 			query, err := qb.GetShiftProductionNOK(lineID, date, shift.ShiftType)

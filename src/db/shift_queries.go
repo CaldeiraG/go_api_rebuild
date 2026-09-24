@@ -316,11 +316,30 @@ func (qb *ProdQueryBuilder) BuildShiftQueryNOK(
 }
 
 // GetAllShiftsForDate returns all 3 shift periods for a date
-func (qb *ProdQueryBuilder) GetAllShiftsForDate(date time.Time) []ShiftConfig {
-	return []ShiftConfig{
-		GetShiftConfig(Shift1, date),
-		GetShiftConfig(Shift2, date),
-		GetShiftConfig(Shift3, date),
+func (qb *ProdQueryBuilder) GetAllShiftsForDate(date time.Time, lineID string) []ShiftConfig {
+
+	configMap, err := qb.LoadConfig()
+	if err != nil {
+		fmt.Errorf("Error loading config: %v\n", err)
+		return nil
+	}
+
+	lineConfig, exists := configMap[lineID]
+	if !exists {
+		fmt.Errorf("line ID %s not found in configuration", lineID)
+		return nil
+	}
+
+	if lineConfig.QueryType == "gen5" {
+		// For GEN5, we can return a single shift covering the whole day
+		return []ShiftConfig{GetShiftConfig(Shift1, date)}
+	} else {
+
+		return []ShiftConfig{
+			GetShiftConfig(Shift1, date),
+			GetShiftConfig(Shift2, date),
+			GetShiftConfig(Shift3, date),
+		}
 	}
 }
 
@@ -329,7 +348,7 @@ func (qb *ProdQueryBuilder) GetShiftProductionForDate(
 	lineID string,
 	date time.Time,
 ) (map[ShiftType]string, error) {
-	shifts := qb.GetAllShiftsForDate(date)
+	shifts := qb.GetAllShiftsForDate(date, lineID)
 	result := make(map[ShiftType]string)
 
 	for _, shift := range shifts {

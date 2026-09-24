@@ -160,25 +160,3 @@ func (qb *ProdQueryBuilder) LoadConfig() (map[string]*ProdQueryConfig, error) {
 
 	return result, nil
 }
-
-// contains checks if a slice contains a string
-func contains(slice []string, str string) bool {
-	for _, s := range slice {
-		if s == str {
-			return true
-		}
-	}
-	return false
-}
-
-// joinStrings joins multiple strings with a separator
-func joinStrings(strs []string, sep string) string {
-	result := ""
-	for i, s := range strs {
-		if i > 0 {
-			result += sep
-		}
-		result += s
-	}
-	return result
-}
