@@ -153,7 +153,7 @@ func (qb *ProdQueryBuilder) BuildShiftQuery(
 			Hour as hora,
 			max(OK) as prod,
 			model
-		FROM [%s]
+		FROM %s
 		%s
 		GROUP BY Hour, Model
 	`, lineConfig.DatabaseInUse, whereClause)
