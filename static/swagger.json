@@ -294,6 +294,198 @@
           }
         }
       }
+    },
+    "/graph/api/daily/{line_id}": {
+      "get": {
+        "tags": ["Graph"],
+        "summary": "Get daily production data",
+        "description": "Get daily production data for a line within a date range. Returns production by hour and shift.",
+        "operationId": "getDailyProduction",
+        "parameters": [
+          {
+            "name": "line_id",
+            "in": "path",
+            "description": "Line ID",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "startDate",
+            "in": "query",
+            "description": "Start date (YYYY-MM-DD)",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "endDate",
+            "in": "query",
+            "description": "End date (YYYY-MM-DD)",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Daily production data",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "line_id": {
+                        "type": "string"
+                      },
+                      "date": {
+                        "type": "string"
+                      },
+                      "hora": {
+                        "type": "integer"
+                      },
+                      "prod": {
+                        "type": "integer"
+                      },
+                      "shift": {
+                        "type": "string"
+                      },
+                      "model": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request - missing or invalid parameters",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "code": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No data found for the specified line and date range"
+          }
+        }
+      }
+    },
+    "/graph/api/dailynok/{line_id}": {
+      "get": {
+        "tags": ["Graph"],
+        "summary": "Get daily NOK (non-conforming) data",
+        "description": "Get daily NOK production data for a line within a date range. Returns NOK by hour and shift.",
+        "operationId": "getDailyNOK",
+        "parameters": [
+          {
+            "name": "line_id",
+            "in": "path",
+            "description": "Line ID",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "startDate",
+            "in": "query",
+            "description": "Start date (YYYY-MM-DD)",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "endDate",
+            "in": "query",
+            "description": "End date (YYYY-MM-DD)",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Daily NOK data",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "line_id": {
+                        "type": "string"
+                      },
+                      "date": {
+                        "type": "string"
+                      },
+                      "hora": {
+                        "type": "integer"
+                      },
+                      "prod": {
+                        "type": "integer"
+                      },
+                      "shift": {
+                        "type": "string"
+                      },
+                      "model": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request - missing or invalid parameters",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "code": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No data found for the specified line and date range"
+          }
+        }
+      }
     }
   },
   "openapi": "3.0.0"

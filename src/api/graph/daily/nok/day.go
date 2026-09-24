@@ -3,6 +3,7 @@ package nok
 import (
 	"database/sql"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"time"
@@ -25,6 +26,25 @@ type dailyNOKResponse struct {
 	Prod   int64  `json:"prod"`
 	Shift  string `json:"shift"`
 	Model  string `json:"model,omitempty"`
+	Error  string `json:"error,omitempty"` // Detailed error message when query fails
+}
+
+// errorResponse represents a detailed error message
+type errorResponse struct {
+	Error   string `json:"error"`
+	Message string `json:"message,omitempty"`
+	Code    string `json:"code,omitempty"`
+}
+
+// sendErrorResponse sends a detailed error response
+func sendErrorResponse(w http.ResponseWriter, statusCode int, message, code string) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(statusCode)
+	json.NewEncoder(w).Encode(errorResponse{
+		Error:   message,
+		Message: code,
+		Code:    "ERROR",
+	})
 }
 
 // DailyNOK handles the daily NOK production endpoint (using paramRej)
@@ -37,34 +57,26 @@ func DailyNOK(w http.ResponseWriter, r *http.Request) {
 
 	// Validate parameters
 	if lineID == "" || startDateStr == "" || endDateStr == "" {
-		w.WriteHeader(400)
-		w.Header().Set("Content-Type", "application/json")
-		w.Write([]byte(`{"error": "Missing required parameters: line_id, startDate, endDate"}`))
+		sendErrorResponse(w, http.StatusBadRequest, "Missing required parameters", "MISSING_PARAMETERS")
 		return
 	}
 
 	// Parse dates
 	startDate, err := time.Parse("2006-01-02", startDateStr)
 	if err != nil {
-		w.WriteHeader(400)
-		w.Header().Set("Content-Type", "application/json")
-		w.Write([]byte(fmt.Sprintf(`{"error": "Invalid startDate format. Use YYYY-MM-DD"}`)))
+		sendErrorResponse(w, http.StatusBadRequest, "Invalid startDate format", fmt.Sprintf("INVALID_DATE: %v", err))
 		return
 	}
 
 	endDate, err := time.Parse("2006-01-02", endDateStr)
 	if err != nil {
-		w.WriteHeader(400)
-		w.Header().Set("Content-Type", "application/json")
-		w.Write([]byte(fmt.Sprintf(`{"error": "Invalid endDate format. Use YYYY-MM-DD"}`)))
+		sendErrorResponse(w, http.StatusBadRequest, "Invalid endDate format", fmt.Sprintf("INVALID_DATE: %v", err))
 		return
 	}
 
 	// Validate date range
 	if endDate.Before(startDate) {
-		w.WriteHeader(400)
-		w.Header().Set("Content-Type", "application/json")
-		w.Write([]byte(`{"error": "endDate must be after or equal to startDate"}`))
+		sendErrorResponse(w, http.StatusBadRequest, "endDate must be after or equal to startDate", "INVALID_DATE_RANGE")
 		return
 	}
 
@@ -88,6 +100,7 @@ func DailyNOK(w http.ResponseWriter, r *http.Request) {
 					Prod:   0,
 					Shift:  string(shift.ShiftType),
 					Model:  "",
+					Error:  err.Error(), // Add error details to the response
 				})
 				continue
 			}
@@ -102,6 +115,7 @@ func DailyNOK(w http.ResponseWriter, r *http.Request) {
 					Prod:   0,
 					Shift:  string(shift.ShiftType),
 					Model:  "",
+					Error:  fmt.Sprintf("Database query failed: %v", err), // Add detailed error
 				})
 				continue
 			}
@@ -113,6 +127,15 @@ func DailyNOK(w http.ResponseWriter, r *http.Request) {
 				var model string
 				err = rows.Scan(&hora, &prod, &model)
 				if err != nil {
+					results = append(results, dailyNOKResponse{
+						LineID: lineID,
+						Date:   date.Format("2006-01-02"),
+						Hora:   0,
+						Prod:   0,
+						Shift:  string(shift.ShiftType),
+						Model:  "",
+						Error:  fmt.Sprintf("Row scan failed: %v", err), // Add detailed error
+					})
 					continue
 				}
 
@@ -145,15 +168,13 @@ func DailyNOK(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
 	if len(results) == 0 {
-		w.WriteHeader(200)
-		w.Write([]byte(`{"error": "No records found"}`))
+		sendErrorResponse(w, http.StatusNotFound, "No NOK data found", "NO_DATA_FOUND")
 		return
 	}
 
 	err = json.NewEncoder(w).Encode(results)
 	if err != nil {
-		w.WriteHeader(500)
-		w.Write([]byte(fmt.Sprintf(`{"error": "Failed to encode response"}`)))
+		sendErrorResponse(w, http.StatusInternalServerError, "Failed to encode response", fmt.Sprintf("JSON_ERROR: %v", err))
 		return
 	}
 }
