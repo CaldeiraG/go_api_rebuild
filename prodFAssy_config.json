@@ -109,12 +109,12 @@
   },
   "52": {
     "name": "YF Line D",
-    "databaseInUse": "[NewHanon].[dbo].[hanon_result_table]",
+    "databaseInUse": "[YF_Clone].[dbo].[LineD]",
     "ID": "MINDEX",
     "dateTime": "TIME_STAMP",
-    "param": "REJECTED = 0 and WRITE_STATION = 990",
-    "paramRej": "REJECTED = 1",
-    "paramModel": "AND END_ITEM_PART_NUMBER like '%$modelFAssy%' AND ",
+    "param": "AND REJECTED = 0 and WRITE_STATION = 990",
+    "paramRej": "",
+    "paramModel": "",
     "model_id": "END_ITEM_PART_NUMBER",
     "shiftStart": "08:00",
     "shiftEnd": "16:30"
