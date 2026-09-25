@@ -74,7 +74,6 @@ func TestBuildShiftQueryStandard(t *testing.T) {
 		"TIME_STAMP >= '2026-09-21 08:00'",
 		"TIME_STAMP < '2026-09-21 16:30'",
 		"REJECTED = 0",
-		"AND PN like '%X%' AND ",
 		"AND STATION = 1",
 		"GROUP BY DATEPART(hh,TIME_STAMP)",
 	} {
@@ -84,6 +83,12 @@ func TestBuildShiftQueryStandard(t *testing.T) {
 	}
 	if strings.Contains(shift1, "REJECTED = 1") {
 		t.Errorf("shift 1 query should not contain the NOK condition:\n%s", shift1)
+	}
+	// paramModel is disabled until the model-check endpoint substitutes
+	// $modelFAssy.
+	if strings.Contains(shift1, "AND PN like '%X%' AND ") ||
+		strings.Contains(shift1, "$modelFAssy") {
+		t.Errorf("paramModel should not be applied yet:\n%s", shift1)
 	}
 
 	shift2, err := qb.BuildShiftQuery("52", testDate, Shift2)
@@ -160,6 +165,57 @@ func TestBuildShiftQueryNOKStandardUsesParamRej(t *testing.T) {
 	}
 	if strings.Contains(nok, "REJECTED = 0") {
 		t.Errorf("standard NOK query should not use the OK param:\n%s", nok)
+	}
+}
+
+func TestAddCondition(t *testing.T) {
+	tests := []struct {
+		where string
+		cond  string
+		want  string
+	}{
+		{"A = 1", "B = 2", "A = 1 AND B = 2"},
+		{"A = 1", "AND B = 2", "A = 1 AND B = 2"},
+		{"A = 1", "  and B = 2  ", "A = 1 AND B = 2"},
+		{"A = 1", "", "A = 1"},
+		{"A = 1", "   ", "A = 1"},
+	}
+
+	for _, tt := range tests {
+		if got := addCondition(tt.where, tt.cond); got != tt.want {
+			t.Errorf("addCondition(%q, %q) = %q, want %q", tt.where, tt.cond, got, tt.want)
+		}
+	}
+}
+
+func TestBuildShiftQueryEmptyModelID(t *testing.T) {
+	qb := newTestBuilder(t, testConfig)
+
+	builders := []struct {
+		name  string
+		build func(string, time.Time, ShiftType) (string, error)
+	}{
+		{"daily", qb.BuildShiftQuery},
+		{"dailynok", qb.BuildShiftQueryNOK},
+	}
+
+	for _, b := range builders {
+		query, err := b.build("42", testDate, Shift1)
+		if err != nil {
+			t.Fatalf("%s: %v", b.name, err)
+		}
+		if !strings.Contains(query, "'n/a' as model") {
+			t.Errorf("%s query should fall back to an 'n/a' model:\n%s", b.name, query)
+		}
+		if strings.Contains(query, "as model\n") && strings.Contains(query, ",  as model") {
+			t.Errorf("%s query has an empty model expression:\n%s", b.name, query)
+		}
+		if strings.Contains(query, ", \n") || strings.Contains(query, ", \t") {
+			t.Errorf("%s query has a dangling group-by comma:\n%s", b.name, query)
+		}
+		if !strings.Contains(query, "GROUP BY DATEPART(hh,DateTime)") {
+			t.Errorf("%s query should group by the hour only:\n%s", b.name, query)
+		}
 	}
 }
 

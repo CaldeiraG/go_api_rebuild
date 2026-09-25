@@ -20,6 +20,15 @@ const testConfig = `{
     "shiftStart": "08:00",
     "shiftEnd": "16:30"
   },
+  "42": {
+    "name": "No Model Line",
+    "databaseInUse": "[DB].[dbo].[Table2]",
+    "ID": "ID",
+    "dateTime": "DateTime",
+    "param": "GlobalResult=1",
+    "paramRej": "GlobalResult=0",
+    "model_id": ""
+  },
   "1107": {
     "name": "GEN5 Test",
     "databaseInUse": "[GEN5ProdStats].[dbo].[Production]",

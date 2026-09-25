@@ -2,6 +2,7 @@ package db
 
 import (
 	"fmt"
+	"strings"
 	"time"
 )
 
@@ -64,6 +65,45 @@ func ShiftForHour(hour int) ShiftType {
 	default: // 16..23 and 0 (00:00-01:00 belongs to shift 2)
 		return Shift2
 	}
+}
+
+// addCondition appends a WHERE condition, ensuring a single " AND " separator.
+// A leading "AND" is stripped so both "REJECTED = 0" and "AND REJECTED = 0"
+// work, which matters now that the model prefix that used to supply the
+// connector is disabled.
+func addCondition(whereClause, condition string) string {
+	condition = strings.TrimSpace(condition)
+	if len(condition) >= 4 && strings.EqualFold(condition[:4], "and ") {
+		condition = strings.TrimSpace(condition[4:])
+	}
+	if condition == "" {
+		return whereClause
+	}
+	return whereClause + " AND " + condition
+}
+
+// standardHourlyQuery builds the hourly breakdown query used by standard
+// (non-GEN5) lines. Lines without a model_id fall back to a literal 'n/a'
+// model and group by the hour alone, since an empty model expression would
+// otherwise produce invalid SQL.
+func standardHourlyQuery(lineConfig *ProdQueryConfig, whereClause string) string {
+	modelExpr := lineConfig.ModelID
+	groupBy := fmt.Sprintf("DATEPART(hh,%s)", lineConfig.DateTime)
+	if modelExpr == "" {
+		modelExpr = "'n/a'"
+	} else {
+		groupBy += ", " + modelExpr
+	}
+
+	return fmt.Sprintf(`
+		SELECT 
+			DATEPART(hh,%s) AS hora,
+			COUNT(%s) AS prod,
+			%s as model
+		FROM %s
+		WHERE %s
+		GROUP BY %s
+	`, lineConfig.DateTime, lineConfig.ID, modelExpr, lineConfig.DatabaseInUse, whereClause, groupBy)
 }
 
 // BuildShiftQuery builds a query for a specific 24-hour shift period
@@ -136,23 +176,15 @@ func (qb *ProdQueryBuilder) BuildShiftQuery(
 		}
 	}
 
-	// Add paramModel if exists
-	if lineConfig.ParamModel != "" {
-		whereClause += " " + lineConfig.ParamModel
-	}
+	// paramModel is intentionally not applied yet: its value still contains the
+	// legacy $modelFAssy placeholder, which needs the model-check endpoint to be
+	// substituted. Re-enable by appending lineConfig.ParamModel here.
 
 	// Add param condition
-	if lineConfig.Param != "" {
-		whereClause += " " + lineConfig.Param
-	}
+	whereClause = addCondition(whereClause, lineConfig.Param)
 
 	// Add station filter if paramRejSta exists
-	if lineConfig.ParamRejSta != "" {
-		stationParam := lineConfig.ParamRejSta
-		if stationParam != "" {
-			whereClause += " " + stationParam
-		}
-	}
+	whereClause = addCondition(whereClause, lineConfig.ParamRejSta)
 
 	query := ""
 
@@ -170,15 +202,7 @@ func (qb *ProdQueryBuilder) BuildShiftQuery(
 	} else {
 
 		// Build query with GROUP BY hour for hourly breakdown
-		query = fmt.Sprintf(`
-		SELECT 
-			DATEPART(hh,%s) AS hora,
-			COUNT(%s) AS prod,
-			%s as model
-		FROM %s
-		WHERE %s
-		GROUP BY DATEPART(hh,%s), %s
-	`, lineConfig.DateTime, lineConfig.ID, lineConfig.ModelID, lineConfig.DatabaseInUse, whereClause, lineConfig.DateTime, lineConfig.ModelID)
+		query = standardHourlyQuery(lineConfig, whereClause)
 	}
 
 	return query, nil
@@ -231,7 +255,7 @@ func (qb *ProdQueryBuilder) BuildShiftQueryNOK(
 		startHour = 16
 		endHour = 1
 	case Shift3:
-		// 01:00 to 08:00 next day
+		// 01:00 to 08:00 same day
 		startHour = 1
 		endHour = 8
 	}
@@ -273,29 +297,21 @@ func (qb *ProdQueryBuilder) BuildShiftQueryNOK(
 		}
 	}
 
-	// Add paramModel if exists
-	if lineConfig.ParamModel != "" {
-		whereClause += " " + lineConfig.ParamModel
-	}
+	// paramModel is intentionally not applied yet: its value still contains the
+	// legacy $modelFAssy placeholder, which needs the model-check endpoint to be
+	// substituted. Re-enable by appending lineConfig.ParamModel here.
 
 	// Add the NOK/line condition. Standard lines use paramRej for defects,
 	// while GEN5 configs express their line selector in param and have no
 	// paramRej, so reuse param to keep the query scoped to the requested line.
 	if lineConfig.QueryType == "gen5" {
-		if lineConfig.Param != "" {
-			whereClause += " " + lineConfig.Param
-		}
-	} else if lineConfig.ParamRej != "" {
-		whereClause += " " + lineConfig.ParamRej
+		whereClause = addCondition(whereClause, lineConfig.Param)
+	} else {
+		whereClause = addCondition(whereClause, lineConfig.ParamRej)
 	}
 
 	// Add station filter if paramRejSta exists
-	if lineConfig.ParamRejSta != "" {
-		stationParam := lineConfig.ParamRejSta
-		if stationParam != "" {
-			whereClause += " " + stationParam
-		}
-	}
+	whereClause = addCondition(whereClause, lineConfig.ParamRejSta)
 
 	query := ""
 
@@ -312,15 +328,7 @@ func (qb *ProdQueryBuilder) BuildShiftQueryNOK(
 	`, lineConfig.DatabaseInUse, whereClause)
 	} else {
 		// Build query with GROUP BY hour for hourly breakdown
-		query = fmt.Sprintf(`
-		SELECT 
-			DATEPART(hh,%s) AS hora,
-			COUNT(%s) AS prod,
-			%s as model
-		FROM %s
-		WHERE %s
-		GROUP BY DATEPART(hh,%s), %s
-	`, lineConfig.DateTime, lineConfig.ID, lineConfig.ModelID, lineConfig.DatabaseInUse, whereClause, lineConfig.DateTime, lineConfig.ModelID)
+		query = standardHourlyQuery(lineConfig, whereClause)
 	}
 
 	return query, nil

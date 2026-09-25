@@ -32,35 +32,16 @@ func main() {
 		Description: "API Documentation for Hanon Systems",
 	}
 	// =================
-	// Declaring Environment variables
-	// =================
-	var DBHost, DBUser, DBPass, DBName, DBPort string
-	err := godotenv.Load(".env")
-	if err != nil {
-		log.Printf("Error loading .env file, Using container variables: ERR: %v", err)
-	}
-	DBHost = os.Getenv("DB_HOST")
-	DBUser = os.Getenv("DB_USER")
-	DBPass = os.Getenv("DB_PASS")
-	DBName = os.Getenv("DB_NAME")
-	DBPort = os.Getenv("DB_PORT")
-
-	// =================
 	// Declaring Database Connection
 	// =================
-	connString := fmt.Sprintf("server=%s;user id=%s;password=%s;port=%s;database=%s;encrypt=disable;app name=HanonSystemsAPI", DBHost, DBUser, DBPass, DBPort, DBName)
-
-	config.DB, err = sql.Open("sqlserver", connString)
+	db, err := connectDB()
 	if err != nil {
-		log.Fatal("Error creating connection pool: ", err.Error())
+		log.Fatal(err.Error())
 	}
-	config.DB.SetMaxOpenConns(25)
-	config.DB.SetMaxIdleConns(25)
-	config.DB.SetConnMaxLifetime(5 * time.Minute)
+	config.DB = db
 
 	ctx := context.Background()
-	err = config.DB.PingContext(ctx)
-	if err != nil {
+	if err := config.DB.PingContext(ctx); err != nil {
 		log.Fatal(err.Error())
 	}
 
@@ -88,6 +69,31 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+}
+
+// connectDB loads the environment and opens the SQL Server connection pool.
+// It is shared by main and the live health check test.
+func connectDB() (*sql.DB, error) {
+	if err := godotenv.Load(".env"); err != nil {
+		log.Printf("Error loading .env file, Using container variables: ERR: %v", err)
+	}
+
+	connString := fmt.Sprintf(
+		"server=%s;user id=%s;password=%s;port=%s;database=%s;encrypt=disable;app name=HanonSystemsAPI",
+		os.Getenv("DB_HOST"), os.Getenv("DB_USER"), os.Getenv("DB_PASS"),
+		os.Getenv("DB_PORT"), os.Getenv("DB_NAME"),
+	)
+
+	db, err := sql.Open("sqlserver", connString)
+	if err != nil {
+		return nil, fmt.Errorf("error creating connection pool: %w", err)
+	}
+
+	db.SetMaxOpenConns(25)
+	db.SetMaxIdleConns(25)
+	db.SetConnMaxLifetime(5 * time.Minute)
+
+	return db, nil
 }
 
 // buildRouter wires up middleware, API routes and documentation. It is kept

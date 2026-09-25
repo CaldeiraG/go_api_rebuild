@@ -77,6 +77,30 @@ go build -o go-api.exe .
 go test ./...
 ```
 
+### Live health check
+
+Walks every line in `prodFAssy_config.json`, runs the same queries as the
+`/graph` endpoints and reports row counts and timings (requires a reachable
+database configured via `.env`):
+
+```bash
+HEALTHCHECK=1 go test -run TestLineHealth -v .
+```
+
+PowerShell:
+
+```powershell
+$env:HEALTHCHECK="1"; go test -run TestLineHealth -v .
+```
+
+Optional environment variables:
+
+- `HEALTHCHECK_DATE` — date to query as `YYYY-MM-DD` (default: today).
+- `HEALTHCHECK_SLOW_MS` — log entries slower than this in ms (default `2000`).
+
+The check skips "Not Implemented" lines, prints results slowest-first, and
+fails if any query errors.
+
 ## Docker
 
 ```bash
