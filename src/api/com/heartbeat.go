@@ -23,6 +23,7 @@ func HeartbeatInsert(w http.ResponseWriter, r *http.Request) {
 		fmt.Printf("Error: %v\n", err)
 		return
 	}
+	defer query.Close()
 
 	_, err = query.Exec(sql.Named("machine", machineName), sql.Named("ip", ip), sql.Named("app", app), sql.Named("timestamp", timestamp))
 	if err != nil {

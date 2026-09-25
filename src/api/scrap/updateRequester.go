@@ -12,6 +12,12 @@ func UpdateTicketRequester(w http.ResponseWriter, r *http.Request) {
 	ticketID := r.URL.Query().Get("ticket")
 	requester := r.URL.Query().Get("requester")
 
+	if ticketID == "" || requester == "" {
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte("Missing required parameters: ticket, requester"))
+		return
+	}
+
 	query, err := config.DB.Prepare(config.SqlUpdateRequester)
 	if err != nil {
 		w.WriteHeader(500)
@@ -19,6 +25,7 @@ func UpdateTicketRequester(w http.ResponseWriter, r *http.Request) {
 		fmt.Printf("Error: %v\n", err)
 		return
 	}
+	defer query.Close()
 
 	_, err = query.Exec(sql.Named("ticket", ticketID), sql.Named("person", requester), sql.Named("lastupdated", time.Now()))
 	if err != nil {

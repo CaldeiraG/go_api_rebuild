@@ -357,6 +357,10 @@
                       },
                       "model": {
                         "type": "string"
+                      },
+                      "error": {
+                        "type": "string",
+                        "description": "Per-row error when a query or scan fails"
                       }
                     }
                   }
@@ -372,9 +376,6 @@
                   "type": "object",
                   "properties": {
                     "error": {
-                      "type": "string"
-                    },
-                    "message": {
                       "type": "string"
                     },
                     "code": {
@@ -453,6 +454,10 @@
                       },
                       "model": {
                         "type": "string"
+                      },
+                      "error": {
+                        "type": "string",
+                        "description": "Per-row error when a query or scan fails"
                       }
                     }
                   }
@@ -470,9 +475,6 @@
                     "error": {
                       "type": "string"
                     },
-                    "message": {
-                      "type": "string"
-                    },
                     "code": {
                       "type": "string"
                     }
@@ -486,7 +488,82 @@
           }
         }
       }
+    },
+    "/scrap/insertTicket": {
+      "get": {
+        "tags": ["Scrap"],
+        "summary": "Insert a scrap ticket",
+        "operationId": "insertScrapTicket",
+        "parameters": [
+          {"name": "ticket", "in": "query", "required": true, "schema": {"type": "string"}},
+          {"name": "date", "in": "query", "required": false, "schema": {"type": "string"}},
+          {"name": "price", "in": "query", "required": false, "schema": {"type": "string"}},
+          {"name": "costcenter", "in": "query", "required": false, "schema": {"type": "string"}}
+        ],
+        "responses": {
+          "200": {"description": "Ticket inserted"},
+          "400": {"description": "Missing required parameter: ticket"},
+          "500": {"description": "Internal error"}
+        }
+      }
+    },
+    "/scrap/updatePerson": {
+      "get": {
+        "tags": ["Scrap"],
+        "summary": "Update the person of a scrap ticket",
+        "operationId": "updateScrapTicketPerson",
+        "parameters": [
+          {"name": "ticket", "in": "query", "required": true, "schema": {"type": "string"}},
+          {"name": "person", "in": "query", "required": true, "schema": {"type": "string"}}
+        ],
+        "responses": {
+          "200": {"description": "Person updated"},
+          "400": {"description": "Missing required parameters: ticket, person"},
+          "500": {"description": "Internal error"}
+        }
+      }
+    },
+    "/scrap/updateRequester": {
+      "get": {
+        "tags": ["Scrap"],
+        "summary": "Update the requester of a scrap ticket",
+        "operationId": "updateScrapTicketRequester",
+        "parameters": [
+          {"name": "ticket", "in": "query", "required": true, "schema": {"type": "string"}},
+          {"name": "requester", "in": "query", "required": true, "schema": {"type": "string"}}
+        ],
+        "responses": {
+          "200": {"description": "Requester updated"},
+          "400": {"description": "Missing required parameters: ticket, requester"},
+          "500": {"description": "Internal error"}
+        }
+      }
+    },
+    "/com/heartbeat": {
+      "get": {
+        "tags": ["Monitoring"],
+        "summary": "Record an application heartbeat",
+        "operationId": "heartbeat",
+        "parameters": [
+          {"name": "machine", "in": "query", "required": true, "schema": {"type": "string"}},
+          {"name": "app", "in": "query", "required": false, "schema": {"type": "string"}}
+        ],
+        "responses": {
+          "200": {"description": "Heartbeat inserted"},
+          "500": {"description": "Internal error"}
+        }
+      }
     }
   },
+  "servers": [
+    {"url": "http://localhost:4000", "description": "Local development"}
+  ],
+  "tags": [
+    {"name": "Production"},
+    {"name": "Schedule"},
+    {"name": "Scrap"},
+    {"name": "Graph"},
+    {"name": "Monitoring"}
+  ],
   "openapi": "3.0.0"
 }

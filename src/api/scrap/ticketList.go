@@ -14,6 +14,12 @@ func InsertTicketList(w http.ResponseWriter, r *http.Request) {
 	price := r.URL.Query().Get("price")
 	costCenter := r.URL.Query().Get("costcenter")
 
+	if ticketID == "" {
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte("Missing required parameter: ticket"))
+		return
+	}
+
 	query, err := config.DB.Prepare(config.SqlInsertTicket)
 	if err != nil {
 		w.WriteHeader(500)
@@ -21,6 +27,7 @@ func InsertTicketList(w http.ResponseWriter, r *http.Request) {
 		fmt.Printf("Error: %v\n", err)
 		return
 	}
+	defer query.Close()
 
 	_, err = query.Exec(sql.Named("ticket", ticketID), sql.Named("date", dateTicket), sql.Named("lastupdated", time.Now()), sql.Named("price", price), sql.Named("costcenter", costCenter))
 	if err != nil {

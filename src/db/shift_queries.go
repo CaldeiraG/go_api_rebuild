@@ -11,7 +11,7 @@ type ShiftType string
 const (
 	Shift1 ShiftType = "1T" // 08:00 - 16:30 same day
 	Shift2 ShiftType = "2T" // 16:30 - 01:00 next day
-	Shift3 ShiftType = "3T" // 01:00 - 08:00 next day
+	Shift3 ShiftType = "3T" // 01:00 - 08:00 same day
 )
 
 // ShiftConfig holds shift-specific configuration
@@ -39,21 +39,15 @@ func GetShiftConfig(shiftType ShiftType, date time.Time) ShiftConfig {
 			EndTime:   time.Date(date.Year(), date.Month(), date.Day()+1, 1, 0, 0, 0, date.Location()),
 		}
 	case Shift3:
-		// Shift 3: 01:00 to 08:00 next day
+		// Shift 3: 01:00 to 08:00 same day
 		return ShiftConfig{
 			ShiftType: Shift3,
-			StartTime: time.Date(date.Year(), date.Month(), date.Day()+1, 1, 0, 0, 0, date.Location()),
-			EndTime:   time.Date(date.Year(), date.Month(), date.Day()+1, 8, 0, 0, 0, date.Location()),
+			StartTime: time.Date(date.Year(), date.Month(), date.Day(), 1, 0, 0, 0, date.Location()),
+			EndTime:   time.Date(date.Year(), date.Month(), date.Day(), 8, 0, 0, 0, date.Location()),
 		}
 	default:
 		return ShiftConfig{}
 	}
-}
-
-// GetShiftFromConfig returns the shift type from config shift times
-func GetShiftFromConfig(startTime, endTime string) (ShiftType, error) {
-	// Default is Shift2 (01:00 - 01:00)
-	return Shift2, nil
 }
 
 // BuildShiftQuery builds a query for a specific 24-hour shift period
@@ -85,7 +79,7 @@ func (qb *ProdQueryBuilder) BuildShiftQuery(
 		startHour = 16
 		endHour = 1
 	case Shift3:
-		// 01:00 to 08:00 next day
+		// 01:00 to 08:00 same day
 		startHour = 1
 		endHour = 8
 	}
@@ -171,10 +165,6 @@ func (qb *ProdQueryBuilder) BuildShiftQuery(
 	`, lineConfig.DateTime, lineConfig.ID, lineConfig.ModelID, lineConfig.DatabaseInUse, whereClause, lineConfig.DateTime, lineConfig.ModelID)
 	}
 
-	// Log the full query for debugging
-	fmt.Printf("[DEBUG] BuildShiftQuery:\n  LineID: %s\n  Shift: %s\n  Date: %s\n  Query: %s\n",
-		lineID, shiftType, dateStr, query)
-
 	return query, nil
 }
 
@@ -238,9 +228,10 @@ func (qb *ProdQueryBuilder) BuildShiftQueryNOK(
 	var whereClause string
 
 	if lineConfig.QueryType == "gen5" {
-		// GEN5 uses Timestamp
+		// GEN5 uses Timestamp. Keep the same full-day window as the OK query so
+		// /daily and /dailynok report the same 24h period.
 		whereClause = fmt.Sprintf(
-			"Timestamp >= '%s 08:00' AND Timestamp < '%s 08:00'",
+			"Timestamp >= '%s 00:00' AND Timestamp < '%s 00:00'",
 			dateStr, dateStrEnd,
 		)
 	} else {
@@ -318,13 +309,13 @@ func (qb *ProdQueryBuilder) GetAllShiftsForDate(date time.Time, lineID string) [
 
 	configMap, err := qb.LoadConfig()
 	if err != nil {
-		fmt.Errorf("Error loading config: %v\n", err)
+		fmt.Printf("Error loading config: %v\n", err)
 		return nil
 	}
 
 	lineConfig, exists := configMap[lineID]
 	if !exists {
-		fmt.Errorf("line ID %s not found in configuration", lineID)
+		fmt.Printf("line ID %s not found in configuration\n", lineID)
 		return nil
 	}
 
@@ -339,23 +330,4 @@ func (qb *ProdQueryBuilder) GetAllShiftsForDate(date time.Time, lineID string) [
 			GetShiftConfig(Shift3, date),
 		}
 	}
-}
-
-// GetShiftProductionForDate builds queries for all shifts on a date
-func (qb *ProdQueryBuilder) GetShiftProductionForDate(
-	lineID string,
-	date time.Time,
-) (map[ShiftType]string, error) {
-	shifts := qb.GetAllShiftsForDate(date, lineID)
-	result := make(map[ShiftType]string)
-
-	for _, shift := range shifts {
-		query, err := qb.BuildShiftQuery(lineID, date, shift.ShiftType)
-		if err != nil {
-			return nil, err
-		}
-		result[shift.ShiftType] = query
-	}
-
-	return result, nil
 }

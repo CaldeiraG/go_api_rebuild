@@ -1,6 +1,6 @@
 module github.com/caldeirag/go-api
 
-go 1.17
+go 1.21
 
 require (
 	github.com/denisenkom/go-mssqldb v0.11.0

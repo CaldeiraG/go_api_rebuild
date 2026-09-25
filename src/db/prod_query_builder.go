@@ -6,6 +6,8 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"sync"
+	"time"
 )
 
 // ProdQueryConfig represents the configuration for a production line
@@ -31,25 +33,80 @@ type ProdQueryBuilder struct {
 	configPath string
 }
 
+// Config cache. The config file is read on every query build; caching by
+// modification time avoids re-reading/parsing it while still picking up edits
+// made to the file at runtime.
+var (
+	configCacheMu   sync.RWMutex
+	configCache     map[string]*ProdQueryConfig
+	configCacheMod  time.Time
+	configCacheSize int64
+	configCachePath string
+)
+
 // NewProdQueryBuilder creates a new query builder instance
 func NewProdQueryBuilder() *ProdQueryBuilder {
-	// Get the directory of this file
-	_, filename, _, ok := runtime.Caller(0)
-	if !ok {
-		panic("failed to get caller information")
-	}
-
-	// Get directory path and resolve to project root
-	dir := filepath.Dir(filename)
-	configPath := filepath.Join(dir, "..", "..", "prodFAssy_config.json")
-
 	return &ProdQueryBuilder{
-		configPath: configPath,
+		configPath: resolveConfigPath(),
 	}
 }
 
-// LoadConfig loads and parses the JSON configuration
+// resolveConfigPath resolves prodFAssy_config.json in a way that works both
+// from a source checkout and from a compiled/deployed binary:
+//  1. PROD_CONFIG_PATH environment variable (explicit override)
+//  2. next to the running executable
+//  3. project root relative to this source file (local development fallback)
+func resolveConfigPath() string {
+	if p := os.Getenv("PROD_CONFIG_PATH"); p != "" {
+		return p
+	}
+
+	if exe, err := os.Executable(); err == nil {
+		p := filepath.Join(filepath.Dir(exe), "prodFAssy_config.json")
+		if _, err := os.Stat(p); err == nil {
+			return p
+		}
+	}
+
+	if _, filename, _, ok := runtime.Caller(0); ok {
+		p := filepath.Join(filepath.Dir(filename), "..", "..", "prodFAssy_config.json")
+		if _, err := os.Stat(p); err == nil {
+			return p
+		}
+	}
+
+	return "prodFAssy_config.json"
+}
+
+// LineExists reports whether a line is present in the production config.
+func (qb *ProdQueryBuilder) LineExists(lineID string) (bool, error) {
+	configMap, err := qb.LoadConfig()
+	if err != nil {
+		return false, err
+	}
+	_, exists := configMap[lineID]
+	return exists, nil
+}
+
+// LoadConfig loads and parses the JSON configuration, caching the result until
+// the underlying file changes.
 func (qb *ProdQueryBuilder) LoadConfig() (map[string]*ProdQueryConfig, error) {
+	var modTime time.Time
+	var size int64
+	if info, err := os.Stat(qb.configPath); err == nil {
+		modTime = info.ModTime()
+		size = info.Size()
+
+		configCacheMu.RLock()
+		if configCache != nil && configCachePath == qb.configPath &&
+			configCacheSize == size && configCacheMod.Equal(modTime) {
+			cached := configCache
+			configCacheMu.RUnlock()
+			return cached, nil
+		}
+		configCacheMu.RUnlock()
+	}
+
 	data, err := os.ReadFile(qb.configPath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read config file: %w", err)
@@ -157,6 +214,13 @@ func (qb *ProdQueryBuilder) LoadConfig() (map[string]*ProdQueryConfig, error) {
 
 		result[lineID] = cfg
 	}
+
+	configCacheMu.Lock()
+	configCache = result
+	configCacheMod = modTime
+	configCacheSize = size
+	configCachePath = qb.configPath
+	configCacheMu.Unlock()
 
 	return result, nil
 }

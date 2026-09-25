@@ -1,39 +1,89 @@
-# Golang API Template [![wakatime](https://wakatime.com/badge/user/0c2eb4e9-64a3-4002-8eb0-dea543a982e6/project/07229d49-8984-4e3c-a5ee-e99fea0631da.svg)](https://wakatime.com/badge/user/0c2eb4e9-64a3-4002-8eb0-dea543a982e6/project/07229d49-8984-4e3c-a5ee-e99fea0631da) 
+# Hanon Systems API
 
----- 
-This is only a rough template to give you a starting point for your API.
+Go/Chi HTTP API exposing production, schedule, scrap, heartbeat and graph data
+stored in SQL Server. Interactive API documentation is served with Redoc at
+`/docs`.
 
-I will try to keep this API Updated with packages and with new features as I get time!
+## Features
 
+- [x] Chi router with sub-routers per domain
+- [x] SQL Server access via `go-mssqldb` (single connection pool)
+- [x] OpenAPI/Swagger documentation rendered with Redoc
+- [x] Static file serving (`/static`)
+- [x] Daily production/NOK graph endpoints driven by `prodFAssy_config.json`
 
-----
-### Current Features:
+## Requirements
 
-- [x] Chi Router and Sub Router Support
-- [x] DB Support With Gorm.io
-- [x] Documentation with Swagger && Redoc
-- [x] Static File Serving
+- Go 1.21+
+- Access to the SQL Server instance holding the production databases
 
-### Possible New Features:
+## Configuration
 
-- [ ] Add Template files for JSON And DB Read / Write
-- [ ] Add Prometheus Metrics
-- [ ] Public Docker Image of the API
-- [ ] Write a guide for the API on our [Wiki Page](https://wiki.onlytunes.uk)
+Copy `.example.env` to `.env` and fill in the database credentials:
 
-----
-### Need Help Or find a bug? 
-You can get quick support / See other projects progress over in our discord server!
+```
+DB_HOST=
+DB_PORT=
+DB_USER=
+DB_PASS=
+DB_NAME=
+```
 
-[![Support Server](https://img.shields.io/discord/872219348624900096.svg?label=Discord&logo=Discord&colorB=7289da&style=for-the-badge)](https://discord.gg/WYCrkuHJ6X)
+Optional:
 
-### License:
-MIT License
+- `PROD_CONFIG_PATH` — absolute path to `prodFAssy_config.json`. If unset, the
+  API looks next to the running binary and then in the project root.
+- `LOG_REQUESTS=true` — enable per-request access logging (off by default).
 
-Copyright (c) 2022 OnlyTunesRadio
+## Run
 
-Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+```bash
+go run .
+```
 
-The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+The server listens on `:4000`. Open <http://localhost:4000/docs> for the API
+documentation.
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+## Endpoints
+
+| Method | Path                                     | Description                        |
+| ------ | ---------------------------------------- | ---------------------------------- |
+| GET    | `/production/now/{line_id}`              | Current shift production           |
+| GET    | `/production/day/{line_id}`              | Production for the current day     |
+| GET    | `/production/yesterday/{line_id}`        | Production for the previous day    |
+| GET    | `/schedule/shift/{line_id}`              | Current shift schedule             |
+| GET    | `/schedule/now/{line_id}`                | Schedule progress within the shift |
+| GET    | `/schedule/day/{line_id}`                | Schedule progress for the day      |
+| GET    | `/schedule/yesterday/{line_id}`          | Schedule for the previous day      |
+| GET    | `/scrap/insertTicket`                    | Insert a scrap ticket              |
+| GET    | `/scrap/updatePerson`                    | Update the person on a ticket      |
+| GET    | `/scrap/updateRequester`                 | Update the requester on a ticket   |
+| GET    | `/com/heartbeat`                         | Record an application heartbeat    |
+| GET    | `/graph/api/daily/{line_id}`             | Hourly production by shift         |
+| GET    | `/graph/api/dailynok/{line_id}`          | Hourly NOK by shift                |
+
+The graph endpoints accept `startDate` and `endDate` query parameters in
+`YYYY-MM-DD` format.
+
+## Build
+
+```bash
+go build -o go-api.exe .
+```
+
+## Test
+
+```bash
+go test ./...
+```
+
+## Docker
+
+```bash
+docker build -f dockerfile -t hanon-api .
+docker run --env-file .env -p 4000:4000 hanon-api
+```
+
+## License
+
+MIT

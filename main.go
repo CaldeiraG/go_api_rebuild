@@ -24,8 +24,9 @@ func main() {
 	// ================
 	doc := redoc.Redoc{
 		DocsPath: "/docs",
-		// Change SpecPath && SpecFile to ./static/swagger.json when developing locally!
-		SpecPath:    "./static/swagger.json",
+		// SpecPath is the URL the browser requests (served by the /static file server).
+		// SpecFile is the local file Redoc reads at startup.
+		SpecPath:    "/static/swagger.json",
 		SpecFile:    "./static/swagger.json",
 		Title:       "Hanon Systems API",
 		Description: "API Documentation for Hanon Systems",
@@ -33,7 +34,7 @@ func main() {
 	// =================
 	// Declaring Environment variables
 	// =================
-	var DBHost, DBUser, DBPass, DBName, DBPort, DBGEN5Host, DBGEN5User, DBGEN5Pass, DBGEN5Name, DBGEN5Port string
+	var DBHost, DBUser, DBPass, DBName, DBPort string
 	err := godotenv.Load(".env")
 	if err != nil {
 		log.Printf("Error loading .env file, Using container variables: ERR: %v", err)
@@ -44,12 +45,6 @@ func main() {
 	DBName = os.Getenv("DB_NAME")
 	DBPort = os.Getenv("DB_PORT")
 
-	DBGEN5Host = os.Getenv("DBGEN5_HOST")
-	DBGEN5User = os.Getenv("DBGEN5_USER")
-	DBGEN5Pass = os.Getenv("DBGEN5_PASS")
-	DBGEN5Name = os.Getenv("DBGEN5_NAME")
-	DBGEN5Port = os.Getenv("DBGEN5_PORT")
-
 	// =================
 	// Declaring Database Connection
 	// =================
@@ -59,20 +54,12 @@ func main() {
 	if err != nil {
 		log.Fatal("Error creating connection pool: ", err.Error())
 	}
+	config.DB.SetMaxOpenConns(25)
+	config.DB.SetMaxIdleConns(25)
+	config.DB.SetConnMaxLifetime(5 * time.Minute)
+
 	ctx := context.Background()
 	err = config.DB.PingContext(ctx)
-	if err != nil {
-		log.Fatal(err.Error())
-	}
-
-	connStringGEN5 := fmt.Sprintf("server=%s;user id=%s;password=%s;port=%s;database=%s;encrypt=disable;app name=HanonSystemsAPI", DBGEN5Host, DBGEN5User, DBGEN5Pass, DBGEN5Port, DBGEN5Name)
-
-	config.DB2, err = sql.Open("sqlserver", connStringGEN5)
-	if err != nil {
-		log.Fatal("Error creating connection pool: ", err.Error())
-	}
-	ctx2 := context.Background()
-	err = config.DB.PingContext(ctx2)
 	if err != nil {
 		log.Fatal(err.Error())
 	}
@@ -80,15 +67,42 @@ func main() {
 	gen5.ProductionGEN5_cron()
 
 	// =================
-	// Initialize Router and WebServer
+	// Start WebServer
 	// =================
+	r := buildRouter(doc)
+
+	currentTime := time.Now()
+	log.Printf("Starting Server on port 4000")
+	log.Printf("Time: %s", currentTime.Format("2006-01-02 15:04:05"))
+
+	srv := &http.Server{
+		Addr:              ":4000",
+		Handler:           r,
+		ReadHeaderTimeout: 5 * time.Second,
+		ReadTimeout:       15 * time.Second,
+		WriteTimeout:      60 * time.Second,
+		IdleTimeout:       60 * time.Second,
+	}
+
+	err = srv.ListenAndServe()
+	if err != nil {
+		log.Fatal(err)
+	}
+}
+
+// buildRouter wires up middleware, API routes and documentation. It is kept
+// separate from main so it can be exercised by tests without a database.
+func buildRouter(doc redoc.Redoc) http.Handler {
 	r := chi.NewRouter()
-	// Uncomment these during development / debugging
-	r.Use(middleware.Logger)
 	r.Use(middleware.RealIP)
 	r.Use(middleware.RequestID)
 	r.Use(middleware.Recoverer)
 	r.Use(middleware.CleanPath)
+
+	// Request logging is opt-in; set LOG_REQUESTS=true to enable it.
+	if os.Getenv("LOG_REQUESTS") == "true" {
+		r.Use(middleware.Logger)
+	}
 
 	// =================
 	// Set Custom status messages for 404 && 405
@@ -113,21 +127,13 @@ func main() {
 	r.Mount("/production", api.ProductionRouter())
 	r.Mount("/scrap", api.ScrapRouter())
 	r.Mount("/com", api.HeartbeatRouter())
-	r.Mount("/graph", api.GraphRouter())
+	r.Mount("/graph/api", api.GraphRouter())
 	// =================
 	// Initialize API Documentation
 	// =================
 	// Change the http.Dir to ./static for local development!
 	r.Handle("/static/*", http.StripPrefix("/static", http.FileServer(http.Dir("./static"))))
 	r.Handle("/docs", doc.Handler())
-	// =================
-	// Start WebServer
-	// =================
-	currentTime := time.Now()
-	fmt.Printf("Starting Server on port 4000\n")
-	fmt.Printf("Time: %s\n", currentTime.Format("2006-01-02 15:04:05"))
-	err = http.ListenAndServe(":4000", r)
-	if err != nil {
-		log.Fatal(err)
-	}
+
+	return r
 }

@@ -26,11 +26,13 @@ func ProductionGEN5_cron() {
 	ctx := context.Background()
 	production := productionDailyStruct{}
 
-	query, err := config.DB2.Prepare(config.ProductionGEN5)
+	query, err := config.DB.Prepare(config.ProductionGEN5)
 	if err != nil {
 		fmt.Printf("Could not prepare query: %v\n", err)
 		return
 	}
+
+	defer query.Close()
 
 	rows, err := query.QueryContext(ctx)
 	if err != nil {

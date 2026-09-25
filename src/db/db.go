@@ -35,8 +35,9 @@ const SqlInv43 = `select COUNT(MINDEX) as prod, COALESCE(MAX(RIGHT(LEFT(RTRIM(PN
 				 FROM [Inverter_Clone].[dbo].[Line3]
 				 where (REJECTED IS NULL OR REJECTED = 0) and WRITE_STATION = '90' and TIME_STAMP >= @dataInicial and TIME_STAMP <= @dataFinal`
 
-const SqlGEN5 = `select SUM(D_Total_OK) as prod, 'GEN5' as model  from [GEN5ProdStats].[dbo].[Production] where 
-drop table #prod`
+const SqlGEN5 = `select SUM(D_Total_OK) as prod, 'GEN5' as model
+				 from [GEN5ProdStats].[dbo].[Production]
+				 where Timestamp >= @dataInicial and Timestamp <= @dataFinal`
 
 const SqlmodelCheck = `SELECT COALESCE([name],'')
                       FROM [TESTEProd].[dbo].[models] 
@@ -44,10 +45,19 @@ const SqlmodelCheck = `SELECT COALESCE([name],'')
 
 const SqlInsertTicket = `INSERT INTO [TESTEProd].dbo.[ScrapTickets] (ticket,date,lastupdated,price,costCenter) VALUES (@ticket,@date,@lastupdated,@price,@costcenter)`
 
-const SqlInsertTicketNums = `INSERT INTO [TESTEProd].dbo.[ScrapTickets] (ticket,date,requester,person,lastupdated,price) VALUES (?,?,?,?,?,?)`
-
 const SqlUpdatePerson = `UPDATE [TESTEProd].dbo.[ScrapTickets] SET person = @person,lastupdated = @lastupdated WHERE ticket = @ticket`
 
 const SqlUpdateRequester = `UPDATE [TESTEProd].dbo.[ScrapTickets] SET requester = @person,lastupdated = @lastupdated WHERE ticket = @ticket`
 
 const SqlHeartbeat = `INSERT INTO [TESTEProd].dbo.[com_heartbeat] (machine,ip,app,timestamp) VALUES (@machine,@ip,@app,@timestamp)`
+
+// ProductionGEN5 returns the hourly GEN5 production breakdown by invoking the
+// GEN5 statistics stored procedure. The temp table mirrors its result set.
+const ProductionGEN5 = `CREATE TABLE #prod
+(
+  Hour int, Timestamp datetime, A_Total_OK int, A_Total_NOK int, B_Total_OK int, B_Total_NOK int, C1_Total_OK int, C1_Total_NOK int, C2_Total_OK int, C2_Total_NOK int, D_Total_OK int, D_Total_NOK int
+)
+
+insert into #prod EXEC [dbo].[sp_HANON_CalculateProductionStatistics] @runMode = 10
+select Hour as hora, Timestamp, A_Total_OK, A_Total_NOK, B_Total_OK, B_Total_NOK, C1_Total_OK, C1_Total_NOK,C2_Total_OK,C2_Total_NOK,D_Total_OK,D_Total_NOK from #prod
+drop table #prod`
