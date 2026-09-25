@@ -8,7 +8,7 @@ import (
 )
 
 const testConfig = `{
-  "1": {
+  "52": {
     "name": "Test Line",
     "databaseInUse": "[DB].[dbo].[Table]",
     "ID": "MINDEX",
@@ -20,11 +20,11 @@ const testConfig = `{
     "shiftStart": "08:00",
     "shiftEnd": "16:30"
   },
-  "1110": {
+  "1107": {
     "name": "GEN5 Test",
     "databaseInUse": "[GEN5ProdStats].[dbo].[Production]",
     "dateTime": "Timestamp",
-    "param": "AND Line = 'C2'",
+    "param": "AND Line = 'A'",
     "queryType": "gen5",
     "shiftStart": "08:00",
     "shiftEnd": "16:30"
@@ -49,9 +49,9 @@ func TestLoadConfigParsesFields(t *testing.T) {
 		t.Fatalf("LoadConfig: %v", err)
 	}
 
-	line, ok := cfg["1"]
+	line, ok := cfg["52"]
 	if !ok {
-		t.Fatal("expected line 1 in config")
+		t.Fatal("expected line 52 in config")
 	}
 	if line.Name != "Test Line" {
 		t.Errorf("Name = %q, want Test Line", line.Name)
@@ -72,9 +72,9 @@ func TestLoadConfigParsesFields(t *testing.T) {
 		t.Errorf("shift = %s/%s", line.ShiftStart, line.ShiftEnd)
 	}
 
-	gen5, ok := cfg["1110"]
+	gen5, ok := cfg["1107"]
 	if !ok {
-		t.Fatal("expected line 1110 in config")
+		t.Fatal("expected line 1107 in config")
 	}
 	if gen5.QueryType != "gen5" {
 		t.Errorf("QueryType = %q, want gen5", gen5.QueryType)
@@ -114,20 +114,20 @@ func TestLoadConfigCachesAndReloadsOnChange(t *testing.T) {
 	if third["__cache_sentinel__"] != nil {
 		t.Fatal("expected cache to be invalidated after the file changed")
 	}
-	if _, ok := third["1"]; !ok {
-		t.Fatal("expected line 1 after reload")
+	if _, ok := third["52"]; !ok {
+		t.Fatal("expected line 52 after reload")
 	}
 }
 
 func TestLineExists(t *testing.T) {
 	qb := newTestBuilder(t, testConfig)
 
-	exists, err := qb.LineExists("1")
+	exists, err := qb.LineExists("52")
 	if err != nil {
 		t.Fatalf("LineExists: %v", err)
 	}
 	if !exists {
-		t.Error("expected line 1 to exist")
+		t.Error("expected line 52 to exist")
 	}
 
 	exists, err = qb.LineExists("does-not-exist")

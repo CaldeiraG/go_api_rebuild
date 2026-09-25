@@ -51,12 +51,12 @@ func TestGetShiftConfig(t *testing.T) {
 func TestGetAllShiftsForDate(t *testing.T) {
 	qb := newTestBuilder(t, testConfig)
 
-	standard := qb.GetAllShiftsForDate(testDate, "1")
+	standard := qb.GetAllShiftsForDate(testDate, "52")
 	if len(standard) != 3 {
 		t.Fatalf("standard line returned %d shifts, want 3", len(standard))
 	}
 
-	gen5 := qb.GetAllShiftsForDate(testDate, "1110")
+	gen5 := qb.GetAllShiftsForDate(testDate, "1107")
 	if len(gen5) != 1 {
 		t.Fatalf("gen5 line returned %d shifts, want 1", len(gen5))
 	}
@@ -65,7 +65,7 @@ func TestGetAllShiftsForDate(t *testing.T) {
 func TestBuildShiftQueryStandard(t *testing.T) {
 	qb := newTestBuilder(t, testConfig)
 
-	shift1, err := qb.BuildShiftQuery("1", testDate, Shift1)
+	shift1, err := qb.BuildShiftQuery("52", testDate, Shift1)
 	if err != nil {
 		t.Fatalf("BuildShiftQuery: %v", err)
 	}
@@ -86,7 +86,7 @@ func TestBuildShiftQueryStandard(t *testing.T) {
 		t.Errorf("shift 1 query should not contain the NOK condition:\n%s", shift1)
 	}
 
-	shift2, err := qb.BuildShiftQuery("1", testDate, Shift2)
+	shift2, err := qb.BuildShiftQuery("52", testDate, Shift2)
 	if err != nil {
 		t.Fatalf("BuildShiftQuery: %v", err)
 	}
@@ -95,7 +95,7 @@ func TestBuildShiftQueryStandard(t *testing.T) {
 		t.Errorf("shift 2 query has wrong window:\n%s", shift2)
 	}
 
-	shift3, err := qb.BuildShiftQuery("1", testDate, Shift3)
+	shift3, err := qb.BuildShiftQuery("52", testDate, Shift3)
 	if err != nil {
 		t.Fatalf("BuildShiftQuery: %v", err)
 	}
@@ -108,7 +108,7 @@ func TestBuildShiftQueryStandard(t *testing.T) {
 func TestBuildShiftQueryGen5UsesFullDay(t *testing.T) {
 	qb := newTestBuilder(t, testConfig)
 
-	query, err := qb.BuildShiftQuery("1110", testDate, Shift1)
+	query, err := qb.BuildShiftQuery("1107", testDate, Shift1)
 	if err != nil {
 		t.Fatalf("BuildShiftQuery: %v", err)
 	}
@@ -124,11 +124,11 @@ func TestBuildShiftQueryGen5UsesFullDay(t *testing.T) {
 func TestBuildShiftQueryNOKGen5MatchesOKWindow(t *testing.T) {
 	qb := newTestBuilder(t, testConfig)
 
-	ok, err := qb.BuildShiftQuery("1110", testDate, Shift1)
+	ok, err := qb.BuildShiftQuery("1107", testDate, Shift1)
 	if err != nil {
 		t.Fatalf("BuildShiftQuery: %v", err)
 	}
-	nok, err := qb.BuildShiftQueryNOK("1110", testDate, Shift1)
+	nok, err := qb.BuildShiftQueryNOK("1107", testDate, Shift1)
 	if err != nil {
 		t.Fatalf("BuildShiftQueryNOK: %v", err)
 	}
@@ -138,9 +138,28 @@ func TestBuildShiftQueryNOKGen5MatchesOKWindow(t *testing.T) {
 			!strings.Contains(query, "Timestamp < '2026-09-22 00:00'") {
 			t.Errorf("gen5 query should use the full-day window:\n%s", query)
 		}
+		// Both OK and NOK must be scoped to the requested line.
+		if !strings.Contains(query, "AND Line = 'A'") {
+			t.Errorf("gen5 query should be scoped to the line:\n%s", query)
+		}
 	}
 	if !strings.Contains(nok, "max(NOK)") {
 		t.Errorf("NOK query should aggregate NOK, got:\n%s", nok)
+	}
+}
+
+func TestBuildShiftQueryNOKStandardUsesParamRej(t *testing.T) {
+	qb := newTestBuilder(t, testConfig)
+
+	nok, err := qb.BuildShiftQueryNOK("52", testDate, Shift1)
+	if err != nil {
+		t.Fatalf("BuildShiftQueryNOK: %v", err)
+	}
+	if !strings.Contains(nok, "REJECTED = 1") {
+		t.Errorf("standard NOK query should use paramRej:\n%s", nok)
+	}
+	if strings.Contains(nok, "REJECTED = 0") {
+		t.Errorf("standard NOK query should not use the OK param:\n%s", nok)
 	}
 }
 

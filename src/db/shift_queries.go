@@ -262,8 +262,14 @@ func (qb *ProdQueryBuilder) BuildShiftQueryNOK(
 		whereClause += " " + lineConfig.ParamModel
 	}
 
-	// Add paramRej condition instead of param (for NOK/defects)
-	if lineConfig.ParamRej != "" {
+	// Add the NOK/line condition. Standard lines use paramRej for defects,
+	// while GEN5 configs express their line selector in param and have no
+	// paramRej, so reuse param to keep the query scoped to the requested line.
+	if lineConfig.QueryType == "gen5" {
+		if lineConfig.Param != "" {
+			whereClause += " " + lineConfig.Param
+		}
+	} else if lineConfig.ParamRej != "" {
 		whereClause += " " + lineConfig.ParamRej
 	}
 
