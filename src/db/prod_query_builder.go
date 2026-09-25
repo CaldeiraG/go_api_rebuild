@@ -78,14 +78,20 @@ func resolveConfigPath() string {
 	return "prodFAssy_config.json"
 }
 
-// LineExists reports whether a line is present in the production config.
-func (qb *ProdQueryBuilder) LineExists(lineID string) (bool, error) {
+// LineConfig returns the configuration for a line and whether it exists.
+func (qb *ProdQueryBuilder) LineConfig(lineID string) (*ProdQueryConfig, bool, error) {
 	configMap, err := qb.LoadConfig()
 	if err != nil {
-		return false, err
+		return nil, false, err
 	}
-	_, exists := configMap[lineID]
-	return exists, nil
+	cfg, exists := configMap[lineID]
+	return cfg, exists, nil
+}
+
+// LineExists reports whether a line is present in the production config.
+func (qb *ProdQueryBuilder) LineExists(lineID string) (bool, error) {
+	_, exists, err := qb.LineConfig(lineID)
+	return exists, err
 }
 
 // LoadConfig loads and parses the JSON configuration, caching the result until

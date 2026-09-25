@@ -163,6 +163,28 @@ func TestBuildShiftQueryNOKStandardUsesParamRej(t *testing.T) {
 	}
 }
 
+func TestShiftForHour(t *testing.T) {
+	tests := []struct {
+		hour int
+		want ShiftType
+	}{
+		{0, Shift2}, // 00:00-01:00 tail of shift 2
+		{1, Shift3}, // shift 3 starts 01:00
+		{7, Shift3},
+		{8, Shift1}, // shift 1 starts 08:00
+		{15, Shift1},
+		{16, Shift2}, // 16:30 boundary falls in this hour
+		{21, Shift2},
+		{23, Shift2},
+	}
+
+	for _, tt := range tests {
+		if got := ShiftForHour(tt.hour); got != tt.want {
+			t.Errorf("ShiftForHour(%d) = %s, want %s", tt.hour, got, tt.want)
+		}
+	}
+}
+
 func TestBuildShiftQueryUnknownLine(t *testing.T) {
 	qb := newTestBuilder(t, testConfig)
 

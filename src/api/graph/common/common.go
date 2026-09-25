@@ -72,7 +72,7 @@ func Daily(w http.ResponseWriter, r *http.Request, build QueryFunc) {
 
 	qb := db.NewProdQueryBuilder()
 
-	exists, err := qb.LineExists(lineID)
+	line, exists, err := qb.LineConfig(lineID)
 	if err != nil {
 		SendErrorResponse(w, http.StatusInternalServerError, "Failed to load line configuration", "CONFIG_ERROR")
 		return
@@ -81,6 +81,7 @@ func Daily(w http.ResponseWriter, r *http.Request, build QueryFunc) {
 		SendErrorResponse(w, http.StatusNotFound, "Line not found", "LINE_NOT_FOUND")
 		return
 	}
+	isGen5 := line.QueryType == "gen5"
 
 	var results []DailyResponse
 
@@ -109,21 +110,31 @@ func Daily(w http.ResponseWriter, r *http.Request, build QueryFunc) {
 					continue
 				}
 
-				row := DailyResponse{
-					LineID: lineID,
-					Date:   date.Format("2006-01-02"),
-					Hora:   hora,
-					Shift:  string(shift.ShiftType),
-				}
+				value := int64(0)
 				if prod.Valid {
-					row.Prod = prod.Int64
+					value = prod.Int64
 				}
-				if model.Valid && model.String != "" {
-					row.Model = model.String
-				} else if !prod.Valid {
-					row.Model = "n/a"
+
+				rowShifts := []db.ShiftType{shift.ShiftType}
+				if isGen5 {
+					rowShifts = gen5RowShifts(hora)
 				}
-				results = append(results, row)
+
+				for i, rowShift := range rowShifts {
+					row := DailyResponse{
+						LineID: lineID,
+						Date:   date.Format("2006-01-02"),
+						Hora:   hora,
+						Shift:  string(rowShift),
+						Prod:   splitValue(value, len(rowShifts), i),
+					}
+					if model.Valid && model.String != "" {
+						row.Model = model.String
+					} else if !prod.Valid {
+						row.Model = "n/a"
+					}
+					results = append(results, row)
+				}
 			}
 
 			if err := rows.Err(); err != nil {
@@ -143,6 +154,30 @@ func Daily(w http.ResponseWriter, r *http.Request, build QueryFunc) {
 	if err := json.NewEncoder(w).Encode(results); err != nil {
 		fmt.Printf("Failed to encode response: %v\n", err)
 	}
+}
+
+// gen5RowShifts returns the shift(s) an hourly GEN5 row belongs to. GEN5
+// returns the whole day from a single query, so the shift is derived from the
+// hour instead of the queried window. Hour 16 (16:00-17:00) straddles the
+// 16:30 shift boundary, so it is split between shift 1 and shift 2.
+func gen5RowShifts(hora int) []db.ShiftType {
+	if hora == 16 {
+		return []db.ShiftType{db.Shift1, db.Shift2}
+	}
+	return []db.ShiftType{db.ShiftForHour(hora)}
+}
+
+// splitValue distributes an hourly value across the shifts it belongs to.
+// The remainder is given to the last shift so the total is preserved.
+func splitValue(value int64, parts, index int) int64 {
+	if parts <= 1 {
+		return value
+	}
+	base := value / int64(parts)
+	if index == parts-1 {
+		return value - base*int64(parts-1)
+	}
+	return base
 }
 
 func errorResult(lineID string, date time.Time, shift db.ShiftType, err error) DailyResponse {

@@ -50,6 +50,22 @@ func GetShiftConfig(shiftType ShiftType, date time.Time) ShiftConfig {
 	}
 }
 
+// ShiftForHour returns the production shift an hour of the day belongs to:
+// Shift 1 08:00-16:30, Shift 2 16:30-01:00, Shift 3 01:00-08:00.
+//
+// Hourly data cannot represent the 16:30 boundary exactly, so hour 16 is
+// attributed to shift 2 (the shift that starts within that hour).
+func ShiftForHour(hour int) ShiftType {
+	switch {
+	case hour >= 1 && hour < 8:
+		return Shift3
+	case hour >= 8 && hour < 16:
+		return Shift1
+	default: // 16..23 and 0 (00:00-01:00 belongs to shift 2)
+		return Shift2
+	}
+}
+
 // BuildShiftQuery builds a query for a specific 24-hour shift period
 func (qb *ProdQueryBuilder) BuildShiftQuery(
 	lineID string,

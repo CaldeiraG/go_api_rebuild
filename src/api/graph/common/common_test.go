@@ -8,6 +8,7 @@ import (
 	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"reflect"
 	"testing"
 	"time"
 
@@ -174,5 +175,53 @@ func TestDailyGen5UsesSingleShiftPerDay(t *testing.T) {
 	}
 	if len(results) != 2 {
 		t.Fatalf("got %d results, want one per day (2)", len(results))
+	}
+}
+
+func TestGen5RowShifts(t *testing.T) {
+	tests := []struct {
+		hour int
+		want []db.ShiftType
+	}{
+		{0, []db.ShiftType{db.Shift2}},
+		{7, []db.ShiftType{db.Shift3}},
+		{15, []db.ShiftType{db.Shift1}},
+		{16, []db.ShiftType{db.Shift1, db.Shift2}}, // split at the 16:30 boundary
+		{21, []db.ShiftType{db.Shift2}},
+	}
+
+	for _, tt := range tests {
+		if got := gen5RowShifts(tt.hour); !reflect.DeepEqual(got, tt.want) {
+			t.Errorf("gen5RowShifts(%d) = %v, want %v", tt.hour, got, tt.want)
+		}
+	}
+}
+
+func TestSplitValue(t *testing.T) {
+	tests := []struct {
+		value int64
+		parts int
+		index int
+		want  int64
+	}{
+		{100, 1, 0, 100}, // not split
+		{100, 2, 0, 50},
+		{100, 2, 1, 50},
+		{101, 2, 0, 50},
+		{101, 2, 1, 51}, // remainder goes to the last part
+	}
+
+	for _, tt := range tests {
+		if got := splitValue(tt.value, tt.parts, tt.index); got != tt.want {
+			t.Errorf("splitValue(%d, %d, %d) = %d, want %d",
+				tt.value, tt.parts, tt.index, got, tt.want)
+		}
+	}
+
+	// The split must not lose production.
+	for _, value := range []int64{0, 1, 7, 100, 101, 9999} {
+		if got := splitValue(value, 2, 0) + splitValue(value, 2, 1); got != value {
+			t.Errorf("splitValue sum for %d = %d, want %d", value, got, value)
+		}
 	}
 }
