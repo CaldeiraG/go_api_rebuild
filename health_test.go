@@ -79,8 +79,8 @@ func TestLineHealth(t *testing.T) {
 			continue
 		}
 		results = append(results,
-			measureLine(ctx, conn, qb, lineID, cfg.Name, "daily", date),
-			measureLine(ctx, conn, qb, lineID, cfg.Name, "dailynok", date),
+			measureLine(ctx, conn, qb, lineID, cfg.Name, "hourly", date),
+			measureLine(ctx, conn, qb, lineID, cfg.Name, "hourlynok", date),
 		)
 	}
 
@@ -143,7 +143,7 @@ func measureLine(
 	for _, shift := range shifts {
 		var query string
 		var err error
-		if kind == "dailynok" {
+		if kind == "hourlynok" {
 			query, err = qb.GetShiftProductionNOK(lineID, date, shift.ShiftType)
 		} else {
 			query, err = qb.GetShiftProduction(lineID, date, shift.ShiftType)

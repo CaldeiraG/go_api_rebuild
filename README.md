@@ -10,7 +10,7 @@ stored in SQL Server. Interactive API documentation is served with Redoc at
 - [x] SQL Server access via `go-mssqldb` (single connection pool)
 - [x] OpenAPI/Swagger documentation rendered with Redoc
 - [x] Static file serving (`/static`)
-- [x] Daily production/NOK graph endpoints driven by `prodFAssy_config.json`
+- [x] Hourly production/NOK graph endpoints driven by `prodFAssy_config.json`
 
 ## Requirements
 
@@ -59,8 +59,8 @@ documentation.
 | GET    | `/scrap/updatePerson`                    | Update the person on a ticket      |
 | GET    | `/scrap/updateRequester`                 | Update the requester on a ticket   |
 | GET    | `/com/heartbeat`                         | Record an application heartbeat    |
-| GET    | `/graph/api/daily/{line_id}`             | Hourly production by shift         |
-| GET    | `/graph/api/dailynok/{line_id}`          | Hourly NOK by shift                |
+| GET    | `/graph/api/hourly/{line_id}`            | Hourly production by shift         |
+| GET    | `/graph/api/hourlynok/{line_id}`         | Hourly NOK by shift                |
 
 The graph endpoints accept `startDate` and `endDate` query parameters in
 `YYYY-MM-DD` format.
