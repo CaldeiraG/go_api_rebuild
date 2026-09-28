@@ -81,6 +81,8 @@ func TestLineHealth(t *testing.T) {
 		results = append(results,
 			measureLine(ctx, conn, qb, lineID, cfg.Name, "hourly", date),
 			measureLine(ctx, conn, qb, lineID, cfg.Name, "hourlynok", date),
+			measureLine(ctx, conn, qb, lineID, cfg.Name, "daily", date),
+			measureLine(ctx, conn, qb, lineID, cfg.Name, "dailynok", date),
 		)
 	}
 
@@ -134,25 +136,44 @@ func measureLine(
 ) (res lineHealthResult) {
 	res = lineHealthResult{lineID: lineID, name: name, kind: kind}
 
-	shifts := qb.GetAllShiftsForDate(date, lineID)
-	res.queries = len(shifts)
-
 	started := time.Now()
 	defer func() { res.elapsed = time.Since(started) }()
 
-	for _, shift := range shifts {
+	var queries []string
+
+	switch kind {
+	case "daily", "dailynok":
 		var query string
 		var err error
-		if kind == "hourlynok" {
-			query, err = qb.GetShiftProductionNOK(lineID, date, shift.ShiftType)
+		if kind == "dailynok" {
+			query, err = qb.BuildDayQueryNOK(lineID, date, date)
 		} else {
-			query, err = qb.GetShiftProduction(lineID, date, shift.ShiftType)
+			query, err = qb.BuildDayQuery(lineID, date, date)
 		}
 		if err != nil {
 			res.err = err
 			return res
 		}
+		queries = append(queries, query)
+	default:
+		for _, shift := range qb.GetAllShiftsForDate(date, lineID) {
+			var query string
+			var err error
+			if kind == "hourlynok" {
+				query, err = qb.GetShiftProductionNOK(lineID, date, shift.ShiftType)
+			} else {
+				query, err = qb.GetShiftProduction(lineID, date, shift.ShiftType)
+			}
+			if err != nil {
+				res.err = err
+				return res
+			}
+			queries = append(queries, query)
+		}
+	}
+	res.queries = len(queries)
 
+	for _, query := range queries {
 		n, err := countRows(ctx, conn, query)
 		res.rows += n
 		if err != nil {
@@ -171,12 +192,20 @@ func countRows(ctx context.Context, conn *sql.DB, query string) (int, error) {
 	}
 	defer rows.Close()
 
+	columns, err := rows.Columns()
+	if err != nil {
+		return 0, err
+	}
+
 	count := 0
 	for rows.Next() {
-		var hora int
-		var prod sql.NullInt64
-		var model sql.NullString
-		if err := rows.Scan(&hora, &prod, &model); err != nil {
+		// Scan into dynamic destinations so any column shape is supported.
+		values := make([]interface{}, len(columns))
+		dest := make([]interface{}, len(columns))
+		for i := range values {
+			dest[i] = &values[i]
+		}
+		if err := rows.Scan(dest...); err != nil {
 			return count, err
 		}
 		count++

@@ -2,8 +2,10 @@ package api
 
 import (
 	"github.com/caldeirag/go-api/src/api/com"
+	"github.com/caldeirag/go-api/src/api/graph/daily"
+	dailyNok "github.com/caldeirag/go-api/src/api/graph/daily/nok"
 	"github.com/caldeirag/go-api/src/api/graph/hourly"
-	"github.com/caldeirag/go-api/src/api/graph/hourly/nok"
+	hourlyNok "github.com/caldeirag/go-api/src/api/graph/hourly/nok"
 	"github.com/caldeirag/go-api/src/api/production"
 	"github.com/caldeirag/go-api/src/api/schedule"
 	"github.com/caldeirag/go-api/src/api/scrap"
@@ -76,7 +78,9 @@ func GraphRouter() chi.Router {
 
 	// Set up sub-routes
 	graphRoute.Get("/hourly/{line_id}", hourly.HourlyProduction)
-	graphRoute.Get("/hourlynok/{line_id}", nok.HourlyNOK)
+	graphRoute.Get("/hourlynok/{line_id}", hourlyNok.HourlyNOK)
+	graphRoute.Get("/daily/{line_id}", daily.DailyProduction)
+	graphRoute.Get("/dailynok/{line_id}", dailyNok.DailyNOK)
 
 	// Return the Sub-Route back to the main API Router in main.go
 	return graphRoute

@@ -16,6 +16,7 @@ const testConfig = `{
     "param": "REJECTED = 0",
     "paramRej": "REJECTED = 1",
     "paramModel": "AND PN like '%X%' AND ",
+    "model_id": "MINDEX",
     "paramRejSta": "AND STATION = 1",
     "shiftStart": "08:00",
     "shiftEnd": "16:30"

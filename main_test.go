@@ -34,7 +34,8 @@ func TestRouterRouting(t *testing.T) {
 		{"docs", http.MethodGet, "/docs", http.StatusOK},
 		{"graph hourly validates before db", http.MethodGet, "/graph/api/hourly/1", http.StatusBadRequest},
 		{"graph hourlynok validates before db", http.MethodGet, "/graph/api/hourlynok/1", http.StatusBadRequest},
-		{"legacy daily path removed", http.MethodGet, "/graph/api/daily/1", http.StatusNotFound},
+		{"graph daily validates before db", http.MethodGet, "/graph/api/daily/1", http.StatusBadRequest},
+		{"graph dailynok validates before db", http.MethodGet, "/graph/api/dailynok/1", http.StatusBadRequest},
 		{"unknown route", http.MethodGet, "/nope", http.StatusNotFound},
 		{"wrong method", http.MethodPost, "/graph/api/hourly/1", http.StatusMethodNotAllowed},
 	}
@@ -67,6 +68,8 @@ func TestSwaggerSpecContainsRoutes(t *testing.T) {
 	for _, path := range []string{
 		"/graph/api/hourly/{line_id}",
 		"/graph/api/hourlynok/{line_id}",
+		"/graph/api/daily/{line_id}",
+		"/graph/api/dailynok/{line_id}",
 		"/scrap/insertTicket",
 		"/scrap/updatePerson",
 		"/scrap/updateRequester",

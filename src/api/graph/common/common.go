@@ -188,3 +188,102 @@ func errorResult(lineID string, date time.Time, shift db.ShiftType, err error) H
 		Error:  err.Error(),
 	}
 }
+
+// DailyResponse is one per-day, per-model total.
+type DailyResponse struct {
+	LineID string `json:"line_id"`
+	Date   string `json:"date"`
+	Prod   int64  `json:"prod"`
+	Model  string `json:"model,omitempty"`
+	Error  string `json:"error,omitempty"`
+}
+
+// DayQueryFunc builds a whole-day query for a line over an inclusive range.
+type DayQueryFunc func(*db.ProdQueryBuilder, string, time.Time, time.Time) (string, error)
+
+// Daily handles a daily totals graph request:
+// GET /graph/api/{daily|dailynok}/{line_id}?startDate=YYYY-MM-DD&endDate=YYYY-MM-DD
+func Daily(w http.ResponseWriter, r *http.Request, build DayQueryFunc) {
+	lineID := chi.URLParam(r, "line_id")
+	startDateStr := r.URL.Query().Get("startDate")
+	endDateStr := r.URL.Query().Get("endDate")
+
+	if lineID == "" || startDateStr == "" || endDateStr == "" {
+		SendErrorResponse(w, http.StatusBadRequest, "Missing required parameters", "MISSING_PARAMETERS")
+		return
+	}
+
+	startDate, err := time.Parse("2006-01-02", startDateStr)
+	if err != nil {
+		SendErrorResponse(w, http.StatusBadRequest, "Invalid startDate format", "INVALID_DATE")
+		return
+	}
+
+	endDate, err := time.Parse("2006-01-02", endDateStr)
+	if err != nil {
+		SendErrorResponse(w, http.StatusBadRequest, "Invalid endDate format", "INVALID_DATE")
+		return
+	}
+
+	if endDate.Before(startDate) {
+		SendErrorResponse(w, http.StatusBadRequest, "endDate must be after or equal to startDate", "INVALID_DATE_RANGE")
+		return
+	}
+
+	qb := db.NewProdQueryBuilder()
+	if _, exists, err := qb.LineConfig(lineID); err != nil {
+		SendErrorResponse(w, http.StatusInternalServerError, "Failed to load line configuration", "CONFIG_ERROR")
+		return
+	} else if !exists {
+		SendErrorResponse(w, http.StatusNotFound, "Line not found", "LINE_NOT_FOUND")
+		return
+	}
+
+	query, err := build(qb, lineID, startDate, endDate)
+	if err != nil {
+		SendErrorResponse(w, http.StatusInternalServerError, "Failed to build query", "QUERY_ERROR")
+		return
+	}
+
+	rows, err := db.DB.QueryContext(r.Context(), query)
+	if err != nil {
+		SendErrorResponse(w, http.StatusInternalServerError, "Database query failed", "DATABASE_ERROR")
+		return
+	}
+	defer rows.Close()
+
+	var results []DailyResponse
+	for rows.Next() {
+		var date string
+		var model sql.NullString
+		var prod sql.NullInt64
+		if err := rows.Scan(&date, &model, &prod); err != nil {
+			SendErrorResponse(w, http.StatusInternalServerError, "Row scan failed", "SCAN_ERROR")
+			return
+		}
+
+		row := DailyResponse{LineID: lineID, Date: date}
+		if prod.Valid {
+			row.Prod = prod.Int64
+		}
+		if model.Valid {
+			row.Model = model.String
+		}
+		results = append(results, row)
+	}
+
+	if err := rows.Err(); err != nil {
+		SendErrorResponse(w, http.StatusInternalServerError, "Row iteration failed", "ROWS_ERROR")
+		return
+	}
+
+	if len(results) == 0 {
+		SendErrorResponse(w, http.StatusNotFound, "No production data found", "NO_DATA_FOUND")
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	if err := json.NewEncoder(w).Encode(results); err != nil {
+		fmt.Printf("Failed to encode response: %v\n", err)
+	}
+}
