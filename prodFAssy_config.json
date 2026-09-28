@@ -31,7 +31,7 @@
     "param": "AND REJECTED = 0 and WRITE_STATION = 670",
     "paramRej": "AND REJECTED > 0",
     "paramModel": "",
-    "model_id": "PART_NUMBER",
+    "model_id": "END_PART_NUMBER",
     "shiftStart": "08:00",
     "shiftEnd": "16:30"
   },
@@ -55,7 +55,7 @@
     "param": "AND WRITE_STATION = '250' AND (REJECTED IS NULL OR REJECTED = 0)",
     "paramRej": "AND REJECTED = 1",
     "paramModel": "",
-    "model_id": "model_id",
+    "model_id": "PART_NUMBER",
     "shiftStart": "08:00",
     "shiftEnd": "16:30"
   },
@@ -78,8 +78,8 @@
     "dateTime": "TIME_STAMP",
     "param": "AND WRITE_STATION = '390' AND (REJECTED IS NULL OR REJECTED = 0)",
     "paramRej": "AND REJECT_STATION > 0",
-    "paramModel": "AND model_id in ($modelFAssy) AND ",
-    "model_id": "model_id",
+    "paramModel": "",
+    "model_id": "PART_NUMBER",
     "shiftStart": "08:00",
     "shiftEnd": "16:30"
   },
@@ -88,10 +88,10 @@
     "databaseInUse": "[R744_Clone].[dbo].[LineC]",
     "ID": "MINDEX",
     "dateTime": "TIME_STAMP",
-    "param": "AND WRITE_STATION = '510' AND (REJECTED IS NULL OR REJECTED = 0)",
+    "param": "AND WRITE_STATION = '510' AND REJECTED = 0",
     "paramRej": "AND REJECTED = 1",
-    "paramModel": "AND PART_NUMBER like '%$modelFAssy%' AND ",
-    "model_id": "",
+    "paramModel": "",
+    "model_id": "PART_NUMBER",
     "shiftStart": "08:00",
     "shiftEnd": "16:30"
   },
@@ -102,8 +102,8 @@
     "dateTime": "TIME_STAMP",
     "param": "AND WRITE_STATION = '670' AND (REJECTED IS NULL OR REJECTED = 0)",
     "paramRej": "AND REJECTED = 1",
-    "paramModel": "AND PN_END_ITEM like '%$modelFAssy%' AND ",
-    "model_id": "model_id",
+    "paramModel": "",
+    "model_id": "PN_END_ITEM",
     "shiftStart": "08:00",
     "shiftEnd": "16:30"
   },
