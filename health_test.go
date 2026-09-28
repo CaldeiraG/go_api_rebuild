@@ -83,6 +83,8 @@ func TestLineHealth(t *testing.T) {
 			measureLine(ctx, conn, qb, lineID, cfg.Name, "hourlynok", date),
 			measureLine(ctx, conn, qb, lineID, cfg.Name, "daily", date),
 			measureLine(ctx, conn, qb, lineID, cfg.Name, "dailynok", date),
+			measureLine(ctx, conn, qb, lineID, cfg.Name, "monthly", date),
+			measureLine(ctx, conn, qb, lineID, cfg.Name, "monthlynok", date),
 		)
 	}
 
@@ -142,13 +144,18 @@ func measureLine(
 	var queries []string
 
 	switch kind {
-	case "daily", "dailynok":
+	case "daily", "dailynok", "monthly", "monthlynok":
 		var query string
 		var err error
-		if kind == "dailynok" {
-			query, err = qb.BuildDayQueryNOK(lineID, date, date)
-		} else {
+		switch kind {
+		case "daily":
 			query, err = qb.BuildDayQuery(lineID, date, date)
+		case "dailynok":
+			query, err = qb.BuildDayQueryNOK(lineID, date, date)
+		case "monthly":
+			query, err = qb.BuildMonthQuery(lineID, date, date)
+		default:
+			query, err = qb.BuildMonthQueryNOK(lineID, date, date)
 		}
 		if err != nil {
 			res.err = err

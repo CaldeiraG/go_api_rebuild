@@ -198,92 +198,152 @@ type DailyResponse struct {
 	Error  string `json:"error,omitempty"`
 }
 
-// DayQueryFunc builds a whole-day query for a line over an inclusive range.
-type DayQueryFunc func(*db.ProdQueryBuilder, string, time.Time, time.Time) (string, error)
+// MonthlyResponse is one per-month, per-model total.
+type MonthlyResponse struct {
+	LineID string `json:"line_id"`
+	Month  string `json:"month"`
+	Prod   int64  `json:"prod"`
+	Model  string `json:"model,omitempty"`
+	Error  string `json:"error,omitempty"`
+}
+
+// PeriodQueryFunc builds a whole-period (day or month) query for a line over
+// an inclusive range.
+type PeriodQueryFunc func(*db.ProdQueryBuilder, string, time.Time, time.Time) (string, error)
+
+type periodRow struct {
+	period string
+	model  string
+	prod   int64
+}
 
 // Daily handles a daily totals graph request:
 // GET /graph/api/{daily|dailynok}/{line_id}?startDate=YYYY-MM-DD&endDate=YYYY-MM-DD
-func Daily(w http.ResponseWriter, r *http.Request, build DayQueryFunc) {
+func Daily(w http.ResponseWriter, r *http.Request, build PeriodQueryFunc) {
+	lineID, rows, ok := fetchPeriodTotals(w, r, build)
+	if !ok {
+		return
+	}
+
+	results := make([]DailyResponse, 0, len(rows))
+	for _, row := range rows {
+		results = append(results, DailyResponse{
+			LineID: lineID,
+			Date:   row.period,
+			Prod:   row.prod,
+			Model:  row.model,
+		})
+	}
+	writeJSON(w, results)
+}
+
+// Monthly handles a monthly totals graph request:
+// GET /graph/api/{monthly|monthlynok}/{line_id}?startDate=YYYY-MM-DD&endDate=YYYY-MM-DD
+func Monthly(w http.ResponseWriter, r *http.Request, build PeriodQueryFunc) {
+	lineID, rows, ok := fetchPeriodTotals(w, r, build)
+	if !ok {
+		return
+	}
+
+	results := make([]MonthlyResponse, 0, len(rows))
+	for _, row := range rows {
+		results = append(results, MonthlyResponse{
+			LineID: lineID,
+			Month:  row.period,
+			Prod:   row.prod,
+			Model:  row.model,
+		})
+	}
+	writeJSON(w, results)
+}
+
+// fetchPeriodTotals validates the request, runs the period query and returns
+// its rows. On failure it writes the error response and returns ok=false.
+func fetchPeriodTotals(w http.ResponseWriter, r *http.Request, build PeriodQueryFunc) (string, []periodRow, bool) {
 	lineID := chi.URLParam(r, "line_id")
 	startDateStr := r.URL.Query().Get("startDate")
 	endDateStr := r.URL.Query().Get("endDate")
 
 	if lineID == "" || startDateStr == "" || endDateStr == "" {
 		SendErrorResponse(w, http.StatusBadRequest, "Missing required parameters", "MISSING_PARAMETERS")
-		return
+		return "", nil, false
 	}
 
 	startDate, err := time.Parse("2006-01-02", startDateStr)
 	if err != nil {
 		SendErrorResponse(w, http.StatusBadRequest, "Invalid startDate format", "INVALID_DATE")
-		return
+		return "", nil, false
 	}
 
 	endDate, err := time.Parse("2006-01-02", endDateStr)
 	if err != nil {
 		SendErrorResponse(w, http.StatusBadRequest, "Invalid endDate format", "INVALID_DATE")
-		return
+		return "", nil, false
 	}
 
 	if endDate.Before(startDate) {
 		SendErrorResponse(w, http.StatusBadRequest, "endDate must be after or equal to startDate", "INVALID_DATE_RANGE")
-		return
+		return "", nil, false
 	}
 
 	qb := db.NewProdQueryBuilder()
 	if _, exists, err := qb.LineConfig(lineID); err != nil {
 		SendErrorResponse(w, http.StatusInternalServerError, "Failed to load line configuration", "CONFIG_ERROR")
-		return
+		return "", nil, false
 	} else if !exists {
 		SendErrorResponse(w, http.StatusNotFound, "Line not found", "LINE_NOT_FOUND")
-		return
+		return "", nil, false
 	}
 
 	query, err := build(qb, lineID, startDate, endDate)
 	if err != nil {
 		SendErrorResponse(w, http.StatusInternalServerError, "Failed to build query", "QUERY_ERROR")
-		return
+		return "", nil, false
 	}
 
 	rows, err := db.DB.QueryContext(r.Context(), query)
 	if err != nil {
 		SendErrorResponse(w, http.StatusInternalServerError, "Database query failed", "DATABASE_ERROR")
-		return
+		return "", nil, false
 	}
 	defer rows.Close()
 
-	var results []DailyResponse
+	var results []periodRow
 	for rows.Next() {
-		var date string
+		var period string
 		var model sql.NullString
 		var prod sql.NullInt64
-		if err := rows.Scan(&date, &model, &prod); err != nil {
+		if err := rows.Scan(&period, &model, &prod); err != nil {
 			SendErrorResponse(w, http.StatusInternalServerError, "Row scan failed", "SCAN_ERROR")
-			return
+			return "", nil, false
 		}
 
-		row := DailyResponse{LineID: lineID, Date: date}
+		row := periodRow{period: period}
 		if prod.Valid {
-			row.Prod = prod.Int64
+			row.prod = prod.Int64
 		}
 		if model.Valid {
-			row.Model = model.String
+			row.model = model.String
 		}
 		results = append(results, row)
 	}
 
 	if err := rows.Err(); err != nil {
 		SendErrorResponse(w, http.StatusInternalServerError, "Row iteration failed", "ROWS_ERROR")
-		return
+		return "", nil, false
 	}
 
 	if len(results) == 0 {
 		SendErrorResponse(w, http.StatusNotFound, "No production data found", "NO_DATA_FOUND")
-		return
+		return "", nil, false
 	}
 
+	return lineID, results, true
+}
+
+func writeJSON(w http.ResponseWriter, v interface{}) {
 	w.Header().Set("Content-Type", "application/json")
-	if err := json.NewEncoder(w).Encode(results); err != nil {
+	if err := json.NewEncoder(w).Encode(v); err != nil {
 		fmt.Printf("Failed to encode response: %v\n", err)
 	}
 }

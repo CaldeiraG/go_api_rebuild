@@ -36,6 +36,8 @@ func TestRouterRouting(t *testing.T) {
 		{"graph hourlynok validates before db", http.MethodGet, "/graph/api/hourlynok/1", http.StatusBadRequest},
 		{"graph daily validates before db", http.MethodGet, "/graph/api/daily/1", http.StatusBadRequest},
 		{"graph dailynok validates before db", http.MethodGet, "/graph/api/dailynok/1", http.StatusBadRequest},
+		{"graph monthly validates before db", http.MethodGet, "/graph/api/monthly/1", http.StatusBadRequest},
+		{"graph monthlynok validates before db", http.MethodGet, "/graph/api/monthlynok/1", http.StatusBadRequest},
 		{"unknown route", http.MethodGet, "/nope", http.StatusNotFound},
 		{"wrong method", http.MethodPost, "/graph/api/hourly/1", http.StatusMethodNotAllowed},
 	}
@@ -70,6 +72,8 @@ func TestSwaggerSpecContainsRoutes(t *testing.T) {
 		"/graph/api/hourlynok/{line_id}",
 		"/graph/api/daily/{line_id}",
 		"/graph/api/dailynok/{line_id}",
+		"/graph/api/monthly/{line_id}",
+		"/graph/api/monthlynok/{line_id}",
 		"/scrap/insertTicket",
 		"/scrap/updatePerson",
 		"/scrap/updateRequester",

@@ -623,6 +623,140 @@
         }
       }
     },
+    "/graph/api/monthly/{line_id}": {
+      "get": {
+        "tags": ["Graph"],
+        "summary": "Get monthly production totals",
+        "description": "Get per-month, per-model production totals for a line within a date range.",
+        "operationId": "getMonthlyOK",
+        "parameters": [
+          {
+            "name": "line_id",
+            "in": "path",
+            "description": "Line ID",
+            "required": true,
+            "schema": {"type": "string"}
+          },
+          {
+            "name": "startDate",
+            "in": "query",
+            "description": "Start date (YYYY-MM-DD)",
+            "required": true,
+            "schema": {"type": "string"}
+          },
+          {
+            "name": "endDate",
+            "in": "query",
+            "description": "End date (YYYY-MM-DD)",
+            "required": true,
+            "schema": {"type": "string"}
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Monthly production totals",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "line_id": {"type": "string"},
+                      "month": {"type": "string"},
+                      "prod": {"type": "integer"},
+                      "model": {"type": "string"}
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request - missing or invalid parameters",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {"type": "string"},
+                    "code": {"type": "string"}
+                  }
+                }
+              }
+            }
+          },
+          "404": {"description": "No data found for the specified line and date range"}
+        }
+      }
+    },
+    "/graph/api/monthlynok/{line_id}": {
+      "get": {
+        "tags": ["Graph"],
+        "summary": "Get monthly NOK totals",
+        "description": "Get per-month, per-model NOK (non-conforming) totals for a line within a date range.",
+        "operationId": "getMonthlyNOK",
+        "parameters": [
+          {
+            "name": "line_id",
+            "in": "path",
+            "description": "Line ID",
+            "required": true,
+            "schema": {"type": "string"}
+          },
+          {
+            "name": "startDate",
+            "in": "query",
+            "description": "Start date (YYYY-MM-DD)",
+            "required": true,
+            "schema": {"type": "string"}
+          },
+          {
+            "name": "endDate",
+            "in": "query",
+            "description": "End date (YYYY-MM-DD)",
+            "required": true,
+            "schema": {"type": "string"}
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Monthly NOK totals",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "line_id": {"type": "string"},
+                      "month": {"type": "string"},
+                      "prod": {"type": "integer"},
+                      "model": {"type": "string"}
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request - missing or invalid parameters",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {"type": "string"},
+                    "code": {"type": "string"}
+                  }
+                }
+              }
+            }
+          },
+          "404": {"description": "No data found for the specified line and date range"}
+        }
+      }
+    },
     "/scrap/insertTicket": {
       "get": {
         "tags": ["Scrap"],
