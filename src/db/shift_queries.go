@@ -269,7 +269,7 @@ func (qb *ProdQueryBuilder) BuildShiftQueryNOK(
 
 	if lineConfig.QueryType == "gen5" {
 		// GEN5 uses Timestamp. Keep the same full-day window as the OK query so
-		// /daily and /dailynok report the same 24h period.
+		// /hourly and /hourlynok report the same 24h period.
 		whereClause = fmt.Sprintf(
 			"Timestamp >= '%s 00:00' AND Timestamp < '%s 00:00'",
 			dateStr, dateStrEnd,

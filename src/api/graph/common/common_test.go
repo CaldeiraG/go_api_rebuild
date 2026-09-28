@@ -66,7 +66,7 @@ func decodeError(t *testing.T, rec *httptest.ResponseRecorder) errorResponse {
 	return body
 }
 
-func TestDailyValidationErrors(t *testing.T) {
+func TestHourlyValidationErrors(t *testing.T) {
 	tests := []struct {
 		name     string
 		lineID   string
@@ -77,35 +77,35 @@ func TestDailyValidationErrors(t *testing.T) {
 		{
 			name:     "missing parameters",
 			lineID:   "1",
-			target:   "/graph/api/daily/1",
+			target:   "/graph/api/hourly/1",
 			wantCode: http.StatusBadRequest,
 			wantErr:  "MISSING_PARAMETERS",
 		},
 		{
 			name:     "invalid start date",
 			lineID:   "1",
-			target:   "/graph/api/daily/1?startDate=2026-13-01&endDate=2026-09-21",
+			target:   "/graph/api/hourly/1?startDate=2026-13-01&endDate=2026-09-21",
 			wantCode: http.StatusBadRequest,
 			wantErr:  "INVALID_DATE",
 		},
 		{
 			name:     "invalid end date",
 			lineID:   "1",
-			target:   "/graph/api/daily/1?startDate=2026-09-21&endDate=2026-13-01",
+			target:   "/graph/api/hourly/1?startDate=2026-09-21&endDate=2026-13-01",
 			wantCode: http.StatusBadRequest,
 			wantErr:  "INVALID_DATE",
 		},
 		{
 			name:     "end before start",
 			lineID:   "1",
-			target:   "/graph/api/daily/1?startDate=2026-09-22&endDate=2026-09-21",
+			target:   "/graph/api/hourly/1?startDate=2026-09-22&endDate=2026-09-21",
 			wantCode: http.StatusBadRequest,
 			wantErr:  "INVALID_DATE_RANGE",
 		},
 		{
 			name:     "unknown line",
 			lineID:   "999",
-			target:   "/graph/api/daily/999?startDate=2026-09-21&endDate=2026-09-21",
+			target:   "/graph/api/hourly/999?startDate=2026-09-21&endDate=2026-09-21",
 			wantCode: http.StatusNotFound,
 			wantErr:  "LINE_NOT_FOUND",
 		},
@@ -116,7 +116,7 @@ func TestDailyValidationErrors(t *testing.T) {
 			withConfig(t, testConfig)
 
 			rec := httptest.NewRecorder()
-			Daily(rec, graphRequest(tt.target, tt.lineID), (*db.ProdQueryBuilder).GetShiftProduction)
+			Hourly(rec, graphRequest(tt.target, tt.lineID), (*db.ProdQueryBuilder).GetShiftProduction)
 
 			if rec.Code != tt.wantCode {
 				t.Fatalf("status = %d, want %d (body=%q)", rec.Code, tt.wantCode, rec.Body.String())
@@ -128,12 +128,12 @@ func TestDailyValidationErrors(t *testing.T) {
 	}
 }
 
-func TestDailyReturnsPartialErrorsWithoutDatabase(t *testing.T) {
+func TestHourlyReturnsPartialErrorsWithoutDatabase(t *testing.T) {
 	withConfig(t, testConfig)
 
 	rec := httptest.NewRecorder()
-	Daily(rec, graphRequest(
-		"/graph/api/daily/1?startDate=2026-09-21&endDate=2026-09-21", "1"),
+	Hourly(rec, graphRequest(
+		"/graph/api/hourly/1?startDate=2026-09-21&endDate=2026-09-21", "1"),
 		errorBuilder)
 
 	if rec.Code != http.StatusOK {
@@ -143,7 +143,7 @@ func TestDailyReturnsPartialErrorsWithoutDatabase(t *testing.T) {
 		t.Errorf("Content-Type = %q", ct)
 	}
 
-	var results []DailyResponse
+	var results []HourlyResponse
 	if err := json.Unmarshal(rec.Body.Bytes(), &results); err != nil {
 		t.Fatalf("decode results: %v", err)
 	}
@@ -157,19 +157,19 @@ func TestDailyReturnsPartialErrorsWithoutDatabase(t *testing.T) {
 	}
 }
 
-func TestDailyGen5UsesSingleShiftPerDay(t *testing.T) {
+func TestHourlyGen5UsesSingleShiftPerDay(t *testing.T) {
 	withConfig(t, testConfig)
 
 	rec := httptest.NewRecorder()
-	Daily(rec, graphRequest(
-		"/graph/api/dailynok/1110?startDate=2026-09-21&endDate=2026-09-22", "1110"),
+	Hourly(rec, graphRequest(
+		"/graph/api/hourlynok/1110?startDate=2026-09-21&endDate=2026-09-22", "1110"),
 		errorBuilder)
 
 	if rec.Code != http.StatusOK {
 		t.Fatalf("status = %d, want 200 (body=%q)", rec.Code, rec.Body.String())
 	}
 
-	var results []DailyResponse
+	var results []HourlyResponse
 	if err := json.Unmarshal(rec.Body.Bytes(), &results); err != nil {
 		t.Fatalf("decode results: %v", err)
 	}

@@ -295,12 +295,12 @@
         }
       }
     },
-    "/graph/api/daily/{line_id}": {
+    "/graph/api/hourly/{line_id}": {
       "get": {
         "tags": ["Graph"],
-        "summary": "Get daily production data",
-        "description": "Get daily production data for a line within a date range. Returns production by hour and shift.",
-        "operationId": "getDailyProduction",
+        "summary": "Get hourly production data",
+        "description": "Get hourly production data for a line within a date range. Returns production by hour and shift.",
+        "operationId": "getHourlyProduction",
         "parameters": [
           {
             "name": "line_id",
@@ -332,7 +332,7 @@
         ],
         "responses": {
           "200": {
-            "description": "Daily production data",
+            "description": "Hourly production data",
             "content": {
               "application/json": {
                 "schema": {
@@ -392,12 +392,12 @@
         }
       }
     },
-    "/graph/api/dailynok/{line_id}": {
+    "/graph/api/hourlynok/{line_id}": {
       "get": {
         "tags": ["Graph"],
-        "summary": "Get daily NOK (non-conforming) data",
-        "description": "Get daily NOK production data for a line within a date range. Returns NOK by hour and shift.",
-        "operationId": "getDailyNOK",
+        "summary": "Get hourly NOK (non-conforming) data",
+        "description": "Get hourly NOK production data for a line within a date range. Returns NOK by hour and shift.",
+        "operationId": "getHourlyNOK",
         "parameters": [
           {
             "name": "line_id",
@@ -429,7 +429,7 @@
         ],
         "responses": {
           "200": {
-            "description": "Daily NOK data",
+            "description": "Hourly NOK data",
             "content": {
               "application/json": {
                 "schema": {

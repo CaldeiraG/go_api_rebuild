@@ -195,8 +195,8 @@ func TestBuildShiftQueryEmptyModelID(t *testing.T) {
 		name  string
 		build func(string, time.Time, ShiftType) (string, error)
 	}{
-		{"daily", qb.BuildShiftQuery},
-		{"dailynok", qb.BuildShiftQueryNOK},
+		{"hourly", qb.BuildShiftQuery},
+		{"hourlynok", qb.BuildShiftQueryNOK},
 	}
 
 	for _, b := range builders {

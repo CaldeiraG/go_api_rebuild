@@ -1,4 +1,4 @@
-// Package common holds the shared implementation of the graph daily
+// Package common holds the shared implementation of the graph hourly
 // production/NOK endpoints. Both endpoints have identical request parsing,
 // validation and row handling; only the query builder used differs.
 package common
@@ -14,8 +14,8 @@ import (
 	"github.com/go-chi/chi/v5"
 )
 
-// DailyResponse is one hourly production/NOK data point.
-type DailyResponse struct {
+// HourlyResponse is one hourly production/NOK data point.
+type HourlyResponse struct {
 	LineID string `json:"line_id"`
 	Date   string `json:"date"`
 	Hora   int    `json:"hora"`
@@ -41,9 +41,9 @@ func SendErrorResponse(w http.ResponseWriter, statusCode int, message, code stri
 // QueryFunc builds the hourly query for a line, date and shift.
 type QueryFunc func(*db.ProdQueryBuilder, string, time.Time, db.ShiftType) (string, error)
 
-// Daily handles a daily graph request:
-// GET /graph/api/{daily|dailynok}/{line_id}?startDate=YYYY-MM-DD&endDate=YYYY-MM-DD
-func Daily(w http.ResponseWriter, r *http.Request, build QueryFunc) {
+// Hourly handles an hourly graph request:
+// GET /graph/api/{hourly|hourlynok}/{line_id}?startDate=YYYY-MM-DD&endDate=YYYY-MM-DD
+func Hourly(w http.ResponseWriter, r *http.Request, build QueryFunc) {
 	lineID := chi.URLParam(r, "line_id")
 	startDateStr := r.URL.Query().Get("startDate")
 	endDateStr := r.URL.Query().Get("endDate")
@@ -83,7 +83,7 @@ func Daily(w http.ResponseWriter, r *http.Request, build QueryFunc) {
 	}
 	isGen5 := line.QueryType == "gen5"
 
-	var results []DailyResponse
+	var results []HourlyResponse
 
 	for date := startDate; !date.After(endDate); date = date.AddDate(0, 0, 1) {
 		for _, shift := range qb.GetAllShiftsForDate(date, lineID) {
@@ -121,7 +121,7 @@ func Daily(w http.ResponseWriter, r *http.Request, build QueryFunc) {
 				}
 
 				for i, rowShift := range rowShifts {
-					row := DailyResponse{
+					row := HourlyResponse{
 						LineID: lineID,
 						Date:   date.Format("2006-01-02"),
 						Hora:   hora,
@@ -180,8 +180,8 @@ func splitValue(value int64, parts, index int) int64 {
 	return base
 }
 
-func errorResult(lineID string, date time.Time, shift db.ShiftType, err error) DailyResponse {
-	return DailyResponse{
+func errorResult(lineID string, date time.Time, shift db.ShiftType, err error) HourlyResponse {
+	return HourlyResponse{
 		LineID: lineID,
 		Date:   date.Format("2006-01-02"),
 		Shift:  string(shift),
