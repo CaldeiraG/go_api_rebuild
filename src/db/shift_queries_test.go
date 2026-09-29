@@ -121,7 +121,7 @@ func TestBuildShiftQueryGen5UsesFullDay(t *testing.T) {
 		!strings.Contains(query, "Timestamp < '2026-09-22 00:00'") {
 		t.Errorf("gen5 query should cover the full day:\n%s", query)
 	}
-	if !strings.Contains(query, "GROUP BY Hour, Model") {
+	if !strings.Contains(query, "GROUP BY Hour, RTRIM(LTRIM(Model))") {
 		t.Errorf("gen5 query missing group by:\n%s", query)
 	}
 }

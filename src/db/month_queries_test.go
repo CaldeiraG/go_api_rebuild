@@ -21,13 +21,13 @@ func TestBuildMonthQueryStandard(t *testing.T) {
 
 	for _, want := range []string{
 		"CONVERT(varchar(7), TIME_STAMP, 23) AS [month]",
-		"MINDEX AS model",
+		"RTRIM(LTRIM(MINDEX)) AS model",
 		"COUNT(MINDEX) AS prod",
 		"[DB].[dbo].[Table]",
 		"TIME_STAMP >= '2026-09-01 00:00'",
 		"TIME_STAMP < '2026-10-01 00:00'", // endDate + 1 day, exclusive
 		"REJECTED = 0",
-		"GROUP BY CONVERT(varchar(7), TIME_STAMP, 23), MINDEX",
+		"GROUP BY CONVERT(varchar(7), TIME_STAMP, 23), RTRIM(LTRIM(MINDEX))",
 	} {
 		if !strings.Contains(query, want) {
 			t.Errorf("month query missing %q:\n%s", want, query)
@@ -79,11 +79,11 @@ func TestBuildMonthQueryGen5(t *testing.T) {
 	}
 	for _, want := range []string{
 		"CONVERT(varchar(7), Timestamp, 23) AS [month]",
-		"Model AS model",
+		"RTRIM(LTRIM(Model)) AS model",
 		"SUM(OK) AS prod",
 		"[GEN5ProdStats].[dbo].[Production]",
 		"AND Line = 'A'",
-		"GROUP BY CONVERT(varchar(7), Timestamp, 23), Model",
+		"GROUP BY CONVERT(varchar(7), Timestamp, 23), RTRIM(LTRIM(Model))",
 	} {
 		if !strings.Contains(ok, want) {
 			t.Errorf("gen5 month query missing %q:\n%s", want, ok)

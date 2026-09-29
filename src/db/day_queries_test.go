@@ -16,14 +16,14 @@ func TestBuildDayQueryStandard(t *testing.T) {
 
 	for _, want := range []string{
 		"CONVERT(varchar(10), TIME_STAMP, 23) AS [date]",
-		"MINDEX AS model",
+		"RTRIM(LTRIM(MINDEX)) AS model",
 		"COUNT(MINDEX) AS prod",
 		"[DB].[dbo].[Table]",
 		"TIME_STAMP >= '2026-09-21 00:00'",
 		"TIME_STAMP < '2026-09-23 00:00'", // endDate + 1 day, exclusive
 		"REJECTED = 0",
 		"AND STATION = 1",
-		"GROUP BY CONVERT(varchar(10), TIME_STAMP, 23), MINDEX",
+		"GROUP BY CONVERT(varchar(10), TIME_STAMP, 23), RTRIM(LTRIM(MINDEX))",
 	} {
 		if !strings.Contains(query, want) {
 			t.Errorf("day query missing %q:\n%s", want, query)
@@ -81,13 +81,13 @@ func TestBuildDayQueryGen5(t *testing.T) {
 	}
 	for _, want := range []string{
 		"CONVERT(varchar(10), Timestamp, 23) AS [date]",
-		"Model AS model",
+		"RTRIM(LTRIM(Model)) AS model",
 		"SUM(OK) AS prod",
 		"[GEN5ProdStats].[dbo].[Production]",
 		"Timestamp >= '2026-09-21 00:00'",
 		"Timestamp < '2026-09-22 00:00'",
 		"AND Line = 'A'",
-		"GROUP BY CONVERT(varchar(10), Timestamp, 23), Model",
+		"GROUP BY CONVERT(varchar(10), Timestamp, 23), RTRIM(LTRIM(Model))",
 	} {
 		if !strings.Contains(ok, want) {
 			t.Errorf("gen5 day query missing %q:\n%s", want, ok)

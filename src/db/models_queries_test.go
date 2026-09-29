@@ -14,11 +14,11 @@ func TestBuildModelsQueryStandard(t *testing.T) {
 	}
 
 	for _, want := range []string{
-		"SELECT DISTINCT MINDEX AS model",
+		"SELECT DISTINCT RTRIM(LTRIM(MINDEX)) AS model",
 		"[DB].[dbo].[Table]",
 		"TIME_STAMP >= '2026-09-21 00:00'",
 		"TIME_STAMP < '2026-09-22 00:00'",
-		"MINDEX IS NOT NULL AND RTRIM(MINDEX) <> ''",
+		"RTRIM(LTRIM(MINDEX)) IS NOT NULL AND RTRIM(LTRIM(MINDEX)) <> ''",
 		"ORDER BY model",
 	} {
 		if !strings.Contains(query, want) {
@@ -51,7 +51,7 @@ func TestBuildModelsQueryGen5(t *testing.T) {
 		t.Fatalf("BuildModelsQuery: %v", err)
 	}
 	for _, want := range []string{
-		"SELECT DISTINCT Model AS model",
+		"SELECT DISTINCT RTRIM(LTRIM(Model)) AS model",
 		"[GEN5ProdStats].[dbo].[Production]",
 		"Timestamp >= '2026-09-21 00:00'",
 		"AND Line = 'A'",

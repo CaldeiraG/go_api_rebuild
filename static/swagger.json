@@ -911,12 +911,17 @@
         ],
         "responses": {
           "200": {
-            "description": "Distinct model names",
+            "description": "Distinct observed models",
             "content": {
               "application/json": {
                 "schema": {
                   "type": "array",
-                  "items": {"type": "string"}
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "model": {"type": "string"}
+                    }
+                  }
                 }
               }
             }

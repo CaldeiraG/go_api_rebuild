@@ -51,16 +51,14 @@ func (qb *ProdQueryBuilder) BuildModelsQuery(lineID string, startDate, endDate t
 		timeCol, startStr, timeCol, endExclusiveStr,
 	)
 
-	modelExpr := lineConfig.ModelID
+	modelExpr := trimmedModelExpr(lineConfig.ModelID, "'n/a'")
 	if lineConfig.QueryType == "gen5" {
-		modelExpr = "Model"
+		modelExpr = trimmedModelExpr("Model", "")
 		whereClause = addCondition(whereClause, lineConfig.Param)
-	} else if modelExpr == "" {
-		modelExpr = "'n/a'"
 	}
 
 	whereClause = addCondition(whereClause,
-		fmt.Sprintf("%s IS NOT NULL AND RTRIM(%s) <> ''", modelExpr, modelExpr))
+		fmt.Sprintf("%s IS NOT NULL AND %s <> ''", modelExpr, modelExpr))
 
 	return fmt.Sprintf(`
 		SELECT DISTINCT %s AS model
@@ -106,6 +104,7 @@ func (qb *ProdQueryBuilder) buildAggregateQuery(lineID string, startDate, endDat
 	if lineConfig.QueryType == "gen5" {
 		// GEN5 expresses its line selector in param and aggregates OK/NOK.
 		whereClause = addCondition(whereClause, lineConfig.Param)
+		modelExpr := trimmedModelExpr("Model", "")
 
 		agg := "SUM(OK)"
 		if nok {
@@ -115,13 +114,13 @@ func (qb *ProdQueryBuilder) buildAggregateQuery(lineID string, startDate, endDat
 		return fmt.Sprintf(`
 		SELECT 
 			%s AS %s,
-			Model AS model,
+			%s AS model,
 			%s AS prod
 		FROM %s
 		WHERE %s
-		GROUP BY %s, Model
+		GROUP BY %s, %s
 		ORDER BY %s
-	`, periodExpr, periodAlias, agg, lineConfig.DatabaseInUse, whereClause, periodExpr, orderBy), nil
+	`, periodExpr, periodAlias, modelExpr, agg, lineConfig.DatabaseInUse, whereClause, periodExpr, modelExpr, orderBy), nil
 	}
 
 	if nok {
@@ -131,10 +130,7 @@ func (qb *ProdQueryBuilder) buildAggregateQuery(lineID string, startDate, endDat
 	}
 	whereClause = addCondition(whereClause, lineConfig.ParamRejSta)
 
-	modelExpr := lineConfig.ModelID
-	if modelExpr == "" {
-		modelExpr = "'n/a'"
-	}
+	modelExpr := trimmedModelExpr(lineConfig.ModelID, "'n/a'")
 
 	return fmt.Sprintf(`
 		SELECT 

@@ -292,6 +292,11 @@ func parseLineRange(w http.ResponseWriter, r *http.Request) (string, time.Time, 
 // ModelsQueryFunc builds a models query for a line over an inclusive range.
 type ModelsQueryFunc func(*db.ProdQueryBuilder, string, time.Time, time.Time) (string, error)
 
+// ModelsResponse is one observed model.
+type ModelsResponse struct {
+	Model string `json:"model"`
+}
+
 // Models handles a distinct-models graph request:
 // GET /graph/api/models/{line_id}?startDate=YYYY-MM-DD&endDate=YYYY-MM-DD
 //
@@ -324,7 +329,7 @@ func Models(w http.ResponseWriter, r *http.Request, build ModelsQueryFunc) {
 	}
 	defer rows.Close()
 
-	models := []string{}
+	models := []ModelsResponse{}
 	for rows.Next() {
 		var model sql.NullString
 		if err := rows.Scan(&model); err != nil {
@@ -332,7 +337,7 @@ func Models(w http.ResponseWriter, r *http.Request, build ModelsQueryFunc) {
 			return
 		}
 		if model.Valid && model.String != "" {
-			models = append(models, model.String)
+			models = append(models, ModelsResponse{Model: model.String})
 		}
 	}
 

@@ -82,16 +82,24 @@ func addCondition(whereClause, condition string) string {
 	return whereClause + " AND " + condition
 }
 
+// trimmedModelExpr returns a SQL expression for a model column with leading and
+// trailing whitespace removed, or the fallback literal when no column is set.
+// RTRIM(LTRIM(...)) is used instead of TRIM for older SQL Server versions.
+func trimmedModelExpr(column, fallback string) string {
+	if column == "" {
+		return fallback
+	}
+	return fmt.Sprintf("RTRIM(LTRIM(%s))", column)
+}
+
 // standardHourlyQuery builds the hourly breakdown query used by standard
 // (non-GEN5) lines. Lines without a model_id fall back to a literal 'n/a'
 // model and group by the hour alone, since an empty model expression would
 // otherwise produce invalid SQL.
 func standardHourlyQuery(lineConfig *ProdQueryConfig, whereClause string) string {
-	modelExpr := lineConfig.ModelID
+	modelExpr := trimmedModelExpr(lineConfig.ModelID, "'n/a'")
 	groupBy := fmt.Sprintf("DATEPART(hh,%s)", lineConfig.DateTime)
-	if modelExpr == "" {
-		modelExpr = "'n/a'"
-	} else {
+	if lineConfig.ModelID != "" {
 		groupBy += ", " + modelExpr
 	}
 
@@ -190,15 +198,16 @@ func (qb *ProdQueryBuilder) BuildShiftQuery(
 
 	if lineConfig.QueryType == "gen5" {
 		// For GEN5, we use the specific GEN5 query builder
+		modelExpr := trimmedModelExpr("Model", "")
 		query = fmt.Sprintf(`
 		SELECT 
 			Hour as hora,
 			max(OK) as prod,
-			model
+			%s AS model
 		FROM %s
 		WHERE %s
-		GROUP BY Hour, Model
-	`, lineConfig.DatabaseInUse, whereClause)
+		GROUP BY Hour, %s
+	`, modelExpr, lineConfig.DatabaseInUse, whereClause, modelExpr)
 	} else {
 
 		// Build query with GROUP BY hour for hourly breakdown
@@ -317,15 +326,16 @@ func (qb *ProdQueryBuilder) BuildShiftQueryNOK(
 
 	if lineConfig.QueryType == "gen5" {
 		// For GEN5, we use the specific GEN5 query builder
+		modelExpr := trimmedModelExpr("Model", "")
 		query = fmt.Sprintf(`
 		SELECT 
 			Hour as hora,
 			max(NOK) as prod,
-			model
+			%s AS model
 		FROM %s
 		WHERE %s
-		GROUP BY Hour, Model
-	`, lineConfig.DatabaseInUse, whereClause)
+		GROUP BY Hour, %s
+	`, modelExpr, lineConfig.DatabaseInUse, whereClause, modelExpr)
 	} else {
 		// Build query with GROUP BY hour for hourly breakdown
 		query = standardHourlyQuery(lineConfig, whereClause)
