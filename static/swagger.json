@@ -793,8 +793,17 @@
       "get": {
         "tags": ["Intranet"],
         "summary": "List lines",
-        "description": "Get all rows from [Intranet].[dbo].[lines].",
+        "description": "Get rows from [Intranet].[dbo].[lines], optionally filtered by area.",
         "operationId": "listLines",
+        "parameters": [
+          {
+            "name": "area_id",
+            "in": "query",
+            "description": "Only return lines for this area",
+            "required": false,
+            "schema": {"type": "integer"}
+          }
+        ],
         "responses": {
           "200": {
             "description": "Lines",
@@ -821,6 +830,52 @@
               }
             }
           },
+          "500": {"description": "Internal error"}
+        }
+      }
+    },
+    "/lines/{area_id}": {
+      "get": {
+        "tags": ["Intranet"],
+        "summary": "List lines by area",
+        "description": "Get rows from [Intranet].[dbo].[lines] for a given area.",
+        "operationId": "listLinesByArea",
+        "parameters": [
+          {
+            "name": "area_id",
+            "in": "path",
+            "description": "Area ID",
+            "required": true,
+            "schema": {"type": "integer"}
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lines",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "id": {"type": "integer"},
+                      "area_id": {"type": "integer"},
+                      "name": {"type": "string"},
+                      "description": {"type": "string"},
+                      "IsActive": {"type": "integer"},
+                      "Obj_TCiclo": {"type": "number"},
+                      "Obj_OEE": {"type": "number"},
+                      "Obj_FTT": {"type": "number"},
+                      "Obj_Downtime": {"type": "number"},
+                      "Obj_Scrap": {"type": "number"}
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {"description": "Invalid area_id"},
           "500": {"description": "Internal error"}
         }
       }

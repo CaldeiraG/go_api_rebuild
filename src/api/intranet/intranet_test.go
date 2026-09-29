@@ -1,10 +1,29 @@
 package intranet
 
 import (
+	"context"
 	"encoding/json"
+	"net/http"
+	"net/http/httptest"
 	"sort"
 	"testing"
+
+	"github.com/go-chi/chi/v5"
 )
+
+func TestLinesInvalidAreaID(t *testing.T) {
+	req := httptest.NewRequest(http.MethodGet, "/lines/abc", nil)
+	rctx := chi.NewRouteContext()
+	rctx.URLParams.Add("area_id", "abc")
+	req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, rctx))
+
+	rec := httptest.NewRecorder()
+	Lines(rec, req)
+
+	if rec.Code != http.StatusBadRequest {
+		t.Fatalf("status = %d, want 400 (body=%q)", rec.Code, rec.Body.String())
+	}
+}
 
 func jsonKeys(t *testing.T, v interface{}) []string {
 	t.Helper()

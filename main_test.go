@@ -72,6 +72,7 @@ func TestRouterRegistersRoutes(t *testing.T) {
 	for _, want := range []string{
 		"GET /areas",
 		"GET /lines",
+		"GET /lines/{area_id}",
 		"GET /graph/api/hourly/{line_id}",
 		"GET /graph/api/dailynok/{line_id}",
 		"GET /graph/api/monthly/{line_id}",
@@ -104,6 +105,7 @@ func TestSwaggerSpecContainsRoutes(t *testing.T) {
 		"/graph/api/monthlynok/{line_id}",
 		"/areas",
 		"/lines",
+		"/lines/{area_id}",
 		"/scrap/insertTicket",
 		"/scrap/updatePerson",
 		"/scrap/updateRequester",

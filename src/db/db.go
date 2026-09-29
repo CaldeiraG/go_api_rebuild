@@ -70,3 +70,8 @@ const SqlAreas = `SELECT [id], [name], [description], [production], [type], [IsA
 const SqlLines = `SELECT [id], [area_id], [name], [description], [IsActive], [Obj_TCiclo], [Obj_OEE], [Obj_FTT], [Obj_Downtime], [Obj_Scrap]
 				   FROM [Intranet].[dbo].[lines]
 				   ORDER BY [id]`
+
+const SqlLinesByArea = `SELECT [id], [area_id], [name], [description], [IsActive], [Obj_TCiclo], [Obj_OEE], [Obj_FTT], [Obj_Downtime], [Obj_Scrap]
+						FROM [Intranet].[dbo].[lines]
+						WHERE [area_id] = @area_id
+						ORDER BY [id]`

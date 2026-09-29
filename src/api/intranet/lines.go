@@ -1,8 +1,12 @@
 package intranet
 
 import (
+	"database/sql"
 	"encoding/json"
 	"net/http"
+	"strconv"
+
+	"github.com/go-chi/chi/v5"
 
 	config "github.com/caldeirag/go-api/src/db"
 )
@@ -21,9 +25,29 @@ type Line struct {
 	ObjScrap    *float64 `json:"Obj_Scrap"`
 }
 
-// Lines handles GET /lines.
+// Lines handles GET /lines and GET /lines/{area_id}. The area filter is
+// optional and may also be passed as ?area_id=.
 func Lines(w http.ResponseWriter, r *http.Request) {
-	rows, err := config.DB.QueryContext(r.Context(), config.SqlLines)
+	areaID := chi.URLParam(r, "area_id")
+	if areaID == "" {
+		areaID = r.URL.Query().Get("area_id")
+	}
+
+	query := config.SqlLines
+	var args []interface{}
+
+	if areaID != "" {
+		id, err := strconv.Atoi(areaID)
+		if err != nil {
+			w.WriteHeader(http.StatusBadRequest)
+			w.Write([]byte("Invalid area_id"))
+			return
+		}
+		query = config.SqlLinesByArea
+		args = append(args, sql.Named("area_id", id))
+	}
+
+	rows, err := config.DB.QueryContext(r.Context(), query, args...)
 	if err != nil {
 		writeError(w, err)
 		return

@@ -79,6 +79,7 @@ func HeartbeatRouter() chi.Router {
 func RegisterIntranet(r chi.Router) {
 	r.Get("/areas", intranet.Areas)
 	r.Get("/lines", intranet.Lines)
+	r.Get("/lines/{area_id}", intranet.Lines)
 }
 
 func GraphRouter() chi.Router {
