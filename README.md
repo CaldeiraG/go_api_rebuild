@@ -68,6 +68,7 @@ documentation.
 | GET    | `/graph/api/dailynok/{line_id}`          | Daily NOK totals by model          |
 | GET    | `/graph/api/monthly/{line_id}`           | Monthly production totals by model |
 | GET    | `/graph/api/monthlynok/{line_id}`        | Monthly NOK totals by model        |
+| GET    | `/graph/api/models/{line_id}`            | Distinct models observed by a line |
 
 The graph endpoints accept `startDate` and `endDate` query parameters in
 `YYYY-MM-DD` format.

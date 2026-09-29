@@ -85,6 +85,7 @@ func TestLineHealth(t *testing.T) {
 			measureLine(ctx, conn, qb, lineID, cfg.Name, "dailynok", date),
 			measureLine(ctx, conn, qb, lineID, cfg.Name, "monthly", date),
 			measureLine(ctx, conn, qb, lineID, cfg.Name, "monthlynok", date),
+			measureLine(ctx, conn, qb, lineID, cfg.Name, "models", date),
 		)
 	}
 
@@ -144,7 +145,7 @@ func measureLine(
 	var queries []string
 
 	switch kind {
-	case "daily", "dailynok", "monthly", "monthlynok":
+	case "daily", "dailynok", "monthly", "monthlynok", "models":
 		var query string
 		var err error
 		switch kind {
@@ -154,8 +155,10 @@ func measureLine(
 			query, err = qb.BuildDayQueryNOK(lineID, date, date)
 		case "monthly":
 			query, err = qb.BuildMonthQuery(lineID, date, date)
-		default:
+		case "monthlynok":
 			query, err = qb.BuildMonthQueryNOK(lineID, date, date)
+		default:
+			query, err = qb.BuildModelsQuery(lineID, date, date)
 		}
 		if err != nil {
 			res.err = err

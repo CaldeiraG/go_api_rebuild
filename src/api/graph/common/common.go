@@ -257,32 +257,98 @@ func Monthly(w http.ResponseWriter, r *http.Request, build PeriodQueryFunc) {
 	writeJSON(w, results)
 }
 
-// fetchPeriodTotals validates the request, runs the period query and returns
-// its rows. On failure it writes the error response and returns ok=false.
-func fetchPeriodTotals(w http.ResponseWriter, r *http.Request, build PeriodQueryFunc) (string, []periodRow, bool) {
+// parseLineRange reads and validates the {line_id}, startDate and endDate
+// shared by the graph endpoints, writing an error response on failure.
+func parseLineRange(w http.ResponseWriter, r *http.Request) (string, time.Time, time.Time, bool) {
 	lineID := chi.URLParam(r, "line_id")
 	startDateStr := r.URL.Query().Get("startDate")
 	endDateStr := r.URL.Query().Get("endDate")
 
 	if lineID == "" || startDateStr == "" || endDateStr == "" {
 		SendErrorResponse(w, http.StatusBadRequest, "Missing required parameters", "MISSING_PARAMETERS")
-		return "", nil, false
+		return "", time.Time{}, time.Time{}, false
 	}
 
 	startDate, err := time.Parse("2006-01-02", startDateStr)
 	if err != nil {
 		SendErrorResponse(w, http.StatusBadRequest, "Invalid startDate format", "INVALID_DATE")
-		return "", nil, false
+		return "", time.Time{}, time.Time{}, false
 	}
 
 	endDate, err := time.Parse("2006-01-02", endDateStr)
 	if err != nil {
 		SendErrorResponse(w, http.StatusBadRequest, "Invalid endDate format", "INVALID_DATE")
-		return "", nil, false
+		return "", time.Time{}, time.Time{}, false
 	}
 
 	if endDate.Before(startDate) {
 		SendErrorResponse(w, http.StatusBadRequest, "endDate must be after or equal to startDate", "INVALID_DATE_RANGE")
+		return "", time.Time{}, time.Time{}, false
+	}
+
+	return lineID, startDate, endDate, true
+}
+
+// ModelsQueryFunc builds a models query for a line over an inclusive range.
+type ModelsQueryFunc func(*db.ProdQueryBuilder, string, time.Time, time.Time) (string, error)
+
+// Models handles a distinct-models graph request:
+// GET /graph/api/models/{line_id}?startDate=YYYY-MM-DD&endDate=YYYY-MM-DD
+//
+// It returns a JSON array of model names observed for the line in the range.
+func Models(w http.ResponseWriter, r *http.Request, build ModelsQueryFunc) {
+	lineID, startDate, endDate, ok := parseLineRange(w, r)
+	if !ok {
+		return
+	}
+
+	qb := db.NewProdQueryBuilder()
+	if _, exists, err := qb.LineConfig(lineID); err != nil {
+		SendErrorResponse(w, http.StatusInternalServerError, "Failed to load line configuration", "CONFIG_ERROR")
+		return
+	} else if !exists {
+		SendErrorResponse(w, http.StatusNotFound, "Line not found", "LINE_NOT_FOUND")
+		return
+	}
+
+	query, err := build(qb, lineID, startDate, endDate)
+	if err != nil {
+		SendErrorResponse(w, http.StatusInternalServerError, "Failed to build query", "QUERY_ERROR")
+		return
+	}
+
+	rows, err := db.DB.QueryContext(r.Context(), query)
+	if err != nil {
+		SendErrorResponse(w, http.StatusInternalServerError, "Database query failed", "DATABASE_ERROR")
+		return
+	}
+	defer rows.Close()
+
+	models := []string{}
+	for rows.Next() {
+		var model sql.NullString
+		if err := rows.Scan(&model); err != nil {
+			SendErrorResponse(w, http.StatusInternalServerError, "Row scan failed", "SCAN_ERROR")
+			return
+		}
+		if model.Valid && model.String != "" {
+			models = append(models, model.String)
+		}
+	}
+
+	if err := rows.Err(); err != nil {
+		SendErrorResponse(w, http.StatusInternalServerError, "Row iteration failed", "ROWS_ERROR")
+		return
+	}
+
+	writeJSON(w, models)
+}
+
+// fetchPeriodTotals validates the request, runs the period query and returns
+// its rows. On failure it writes the error response and returns ok=false.
+func fetchPeriodTotals(w http.ResponseWriter, r *http.Request, build PeriodQueryFunc) (string, []periodRow, bool) {
+	lineID, startDate, endDate, ok := parseLineRange(w, r)
+	if !ok {
 		return "", nil, false
 	}
 

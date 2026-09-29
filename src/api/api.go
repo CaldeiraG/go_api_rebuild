@@ -6,6 +6,7 @@ import (
 	dailyNok "github.com/caldeirag/go-api/src/api/graph/daily/nok"
 	"github.com/caldeirag/go-api/src/api/graph/hourly"
 	hourlyNok "github.com/caldeirag/go-api/src/api/graph/hourly/nok"
+	"github.com/caldeirag/go-api/src/api/graph/models"
 	"github.com/caldeirag/go-api/src/api/graph/monthly"
 	monthlyNok "github.com/caldeirag/go-api/src/api/graph/monthly/nok"
 	"github.com/caldeirag/go-api/src/api/intranet"
@@ -94,6 +95,7 @@ func GraphRouter() chi.Router {
 	graphRoute.Get("/dailynok/{line_id}", dailyNok.DailyNOK)
 	graphRoute.Get("/monthly/{line_id}", monthly.MonthlyProduction)
 	graphRoute.Get("/monthlynok/{line_id}", monthlyNok.MonthlyNOK)
+	graphRoute.Get("/models/{line_id}", models.Models)
 
 	// Return the Sub-Route back to the main API Router in main.go
 	return graphRoute

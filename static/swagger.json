@@ -880,6 +880,65 @@
         }
       }
     },
+    "/graph/api/models/{line_id}": {
+      "get": {
+        "tags": ["Graph"],
+        "summary": "List observed models",
+        "description": "Get the distinct models observed for a line within a date range.",
+        "operationId": "getModels",
+        "parameters": [
+          {
+            "name": "line_id",
+            "in": "path",
+            "description": "Line ID",
+            "required": true,
+            "schema": {"type": "string"}
+          },
+          {
+            "name": "startDate",
+            "in": "query",
+            "description": "Start date (YYYY-MM-DD)",
+            "required": true,
+            "schema": {"type": "string"}
+          },
+          {
+            "name": "endDate",
+            "in": "query",
+            "description": "End date (YYYY-MM-DD)",
+            "required": true,
+            "schema": {"type": "string"}
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Distinct model names",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {"type": "string"}
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request - missing or invalid parameters",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {"type": "string"},
+                    "code": {"type": "string"}
+                  }
+                }
+              }
+            }
+          },
+          "404": {"description": "Line not found"}
+        }
+      }
+    },
     "/scrap/insertTicket": {
       "get": {
         "tags": ["Scrap"],

@@ -212,6 +212,79 @@ func TestMonthlyBuildError(t *testing.T) {
 	}
 }
 
+func TestModelsValidationErrors(t *testing.T) {
+	tests := []struct {
+		name     string
+		lineID   string
+		target   string
+		wantCode int
+		wantErr  string
+	}{
+		{
+			name:     "missing parameters",
+			lineID:   "1",
+			target:   "/graph/api/models/1",
+			wantCode: http.StatusBadRequest,
+			wantErr:  "MISSING_PARAMETERS",
+		},
+		{
+			name:     "invalid start date",
+			lineID:   "1",
+			target:   "/graph/api/models/1?startDate=2026-13-01&endDate=2026-09-21",
+			wantCode: http.StatusBadRequest,
+			wantErr:  "INVALID_DATE",
+		},
+		{
+			name:     "end before start",
+			lineID:   "1",
+			target:   "/graph/api/models/1?startDate=2026-09-22&endDate=2026-09-21",
+			wantCode: http.StatusBadRequest,
+			wantErr:  "INVALID_DATE_RANGE",
+		},
+		{
+			name:     "unknown line",
+			lineID:   "999",
+			target:   "/graph/api/models/999?startDate=2026-09-01&endDate=2026-09-30",
+			wantCode: http.StatusNotFound,
+			wantErr:  "LINE_NOT_FOUND",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			withConfig(t, testConfig)
+
+			rec := httptest.NewRecorder()
+			Models(rec, graphRequest(tt.target, tt.lineID), (*db.ProdQueryBuilder).BuildModelsQuery)
+
+			if rec.Code != tt.wantCode {
+				t.Fatalf("status = %d, want %d (body=%q)", rec.Code, tt.wantCode, rec.Body.String())
+			}
+			if got := decodeError(t, rec).Code; got != tt.wantErr {
+				t.Errorf("error code = %q, want %q", got, tt.wantErr)
+			}
+		})
+	}
+}
+
+func TestModelsBuildError(t *testing.T) {
+	withConfig(t, testConfig)
+
+	rec := httptest.NewRecorder()
+	Models(rec, graphRequest(
+		"/graph/api/models/1?startDate=2026-09-01&endDate=2026-09-30", "1"),
+		func(*db.ProdQueryBuilder, string, time.Time, time.Time) (string, error) {
+			return "", errors.New("boom")
+		})
+
+	if rec.Code != http.StatusInternalServerError {
+		t.Fatalf("status = %d, want 500 (body=%q)", rec.Code, rec.Body.String())
+	}
+	if got := decodeError(t, rec).Code; got != "QUERY_ERROR" {
+		t.Errorf("error code = %q, want QUERY_ERROR", got)
+	}
+}
+
 func TestHourlyValidationErrors(t *testing.T) {
 	tests := []struct {
 		name     string

@@ -27,6 +27,49 @@ func (qb *ProdQueryBuilder) BuildMonthQueryNOK(lineID string, startDate, endDate
 	return qb.buildAggregateQuery(lineID, startDate, endDate, true, "month")
 }
 
+// BuildModelsQuery builds a query for the distinct models observed for a line
+// over an inclusive date range. Standard lines read their configured model
+// column; GEN5 shares one table across lines so it is scoped by the line
+// selector. No OK/NOK condition is applied, so every observed model is listed.
+func (qb *ProdQueryBuilder) BuildModelsQuery(lineID string, startDate, endDate time.Time) (string, error) {
+	configMap, err := qb.LoadConfig()
+	if err != nil {
+		return "", fmt.Errorf("failed to load config: %w", err)
+	}
+
+	lineConfig, exists := configMap[lineID]
+	if !exists {
+		return "", fmt.Errorf("line ID %s not found in configuration", lineID)
+	}
+
+	timeCol := lineConfig.DateTime
+	startStr := startDate.Format("2006-01-02")
+	endExclusiveStr := endDate.AddDate(0, 0, 1).Format("2006-01-02")
+
+	whereClause := fmt.Sprintf(
+		"%s >= '%s 00:00' AND %s < '%s 00:00'",
+		timeCol, startStr, timeCol, endExclusiveStr,
+	)
+
+	modelExpr := lineConfig.ModelID
+	if lineConfig.QueryType == "gen5" {
+		modelExpr = "Model"
+		whereClause = addCondition(whereClause, lineConfig.Param)
+	} else if modelExpr == "" {
+		modelExpr = "'n/a'"
+	}
+
+	whereClause = addCondition(whereClause,
+		fmt.Sprintf("%s IS NOT NULL AND RTRIM(%s) <> ''", modelExpr, modelExpr))
+
+	return fmt.Sprintf(`
+		SELECT DISTINCT %s AS model
+		FROM %s
+		WHERE %s
+		ORDER BY model
+	`, modelExpr, lineConfig.DatabaseInUse, whereClause), nil
+}
+
 // buildAggregateQuery aggregates a line by calendar period ("day" or "month")
 // and model over an inclusive date range. The period is rendered with
 // CONVERT(..., 23) so days/months never collide across years.
