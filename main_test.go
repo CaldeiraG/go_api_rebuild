@@ -40,6 +40,8 @@ func TestRouterRouting(t *testing.T) {
 		{"graph monthly validates before db", http.MethodGet, "/graph/api/monthly/1", http.StatusBadRequest},
 		{"graph monthlynok validates before db", http.MethodGet, "/graph/api/monthlynok/1", http.StatusBadRequest},
 		{"graph models validates before db", http.MethodGet, "/graph/api/models/1", http.StatusBadRequest},
+		{"intranet lines invalid area", http.MethodGet, "/intranet/lines/abc", http.StatusBadRequest},
+		{"legacy areas path removed", http.MethodGet, "/areas", http.StatusNotFound},
 		{"unknown route", http.MethodGet, "/nope", http.StatusNotFound},
 		{"wrong method", http.MethodPost, "/graph/api/hourly/1", http.StatusMethodNotAllowed},
 	}
@@ -71,9 +73,9 @@ func TestRouterRegistersRoutes(t *testing.T) {
 	}
 
 	for _, want := range []string{
-		"GET /areas",
-		"GET /lines",
-		"GET /lines/{area_id}",
+		"GET /intranet/areas",
+		"GET /intranet/lines",
+		"GET /intranet/lines/{area_id}",
 		"GET /graph/api/hourly/{line_id}",
 		"GET /graph/api/dailynok/{line_id}",
 		"GET /graph/api/monthly/{line_id}",
@@ -106,9 +108,9 @@ func TestSwaggerSpecContainsRoutes(t *testing.T) {
 		"/graph/api/monthly/{line_id}",
 		"/graph/api/monthlynok/{line_id}",
 		"/graph/api/models/{line_id}",
-		"/areas",
-		"/lines",
-		"/lines/{area_id}",
+		"/intranet/areas",
+		"/intranet/lines",
+		"/intranet/lines/{area_id}",
 		"/scrap/insertTicket",
 		"/scrap/updatePerson",
 		"/scrap/updateRequester",

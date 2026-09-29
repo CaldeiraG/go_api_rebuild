@@ -59,9 +59,9 @@ documentation.
 | GET    | `/scrap/updatePerson`                    | Update the person on a ticket      |
 | GET    | `/scrap/updateRequester`                 | Update the requester on a ticket   |
 | GET    | `/com/heartbeat`                         | Record an application heartbeat    |
-| GET    | `/areas`                                 | List Intranet areas                |
-| GET    | `/lines`                                 | List Intranet lines (optional `?area_id=`) |
-| GET    | `/lines/{area_id}`                       | List Intranet lines for an area    |
+| GET    | `/intranet/areas`                        | List Intranet areas                |
+| GET    | `/intranet/lines`                        | List Intranet lines (optional `?area_id=`) |
+| GET    | `/intranet/lines/{area_id}`              | List Intranet lines for an area    |
 | GET    | `/graph/api/hourly/{line_id}`            | Hourly production by shift         |
 | GET    | `/graph/api/hourlynok/{line_id}`         | Hourly NOK by shift                |
 | GET    | `/graph/api/daily/{line_id}`             | Daily production totals by model   |

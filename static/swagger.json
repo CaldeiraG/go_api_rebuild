@@ -757,7 +757,7 @@
         }
       }
     },
-    "/areas": {
+    "/intranet/areas": {
       "get": {
         "tags": ["Intranet"],
         "summary": "List areas",
@@ -789,7 +789,7 @@
         }
       }
     },
-    "/lines": {
+    "/intranet/lines": {
       "get": {
         "tags": ["Intranet"],
         "summary": "List lines",
@@ -834,7 +834,7 @@
         }
       }
     },
-    "/lines/{area_id}": {
+    "/intranet/lines/{area_id}": {
       "get": {
         "tags": ["Intranet"],
         "summary": "List lines by area",

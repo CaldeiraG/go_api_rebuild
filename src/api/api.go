@@ -75,12 +75,18 @@ func HeartbeatRouter() chi.Router {
 	return heartbeatRoute
 }
 
-// RegisterIntranet registers the Intranet master-data routes (/areas, /lines)
-// directly on the root router.
-func RegisterIntranet(r chi.Router) {
-	r.Get("/areas", intranet.Areas)
-	r.Get("/lines", intranet.Lines)
-	r.Get("/lines/{area_id}", intranet.Lines)
+func IntranetRouter() chi.Router {
+
+	// New Chi SubRouter
+	intranetRoute := chi.NewRouter()
+
+	// Set up sub-routes
+	intranetRoute.Get("/areas", intranet.Areas)
+	intranetRoute.Get("/lines", intranet.Lines)
+	intranetRoute.Get("/lines/{area_id}", intranet.Lines)
+
+	// Return the Sub-Route back to the main API Router in main.go
+	return intranetRoute
 }
 
 func GraphRouter() chi.Router {
