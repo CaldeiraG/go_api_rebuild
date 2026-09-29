@@ -8,6 +8,7 @@ import (
 	hourlyNok "github.com/caldeirag/go-api/src/api/graph/hourly/nok"
 	"github.com/caldeirag/go-api/src/api/graph/monthly"
 	monthlyNok "github.com/caldeirag/go-api/src/api/graph/monthly/nok"
+	"github.com/caldeirag/go-api/src/api/intranet"
 	"github.com/caldeirag/go-api/src/api/production"
 	"github.com/caldeirag/go-api/src/api/schedule"
 	"github.com/caldeirag/go-api/src/api/scrap"
@@ -71,6 +72,13 @@ func HeartbeatRouter() chi.Router {
 
 	// Return the Sub-Route back to the main API Router in main.go
 	return heartbeatRoute
+}
+
+// RegisterIntranet registers the Intranet master-data routes (/areas, /lines)
+// directly on the root router.
+func RegisterIntranet(r chi.Router) {
+	r.Get("/areas", intranet.Areas)
+	r.Get("/lines", intranet.Lines)
 }
 
 func GraphRouter() chi.Router {

@@ -7,6 +7,7 @@ import (
 	"os"
 	"testing"
 
+	"github.com/go-chi/chi/v5"
 	"github.com/mvrilo/go-redoc"
 )
 
@@ -54,6 +55,33 @@ func TestRouterRouting(t *testing.T) {
 	}
 }
 
+func TestRouterRegistersRoutes(t *testing.T) {
+	mux, ok := testRouter(t).(*chi.Mux)
+	if !ok {
+		t.Fatal("router is not a *chi.Mux")
+	}
+
+	routes := map[string]bool{}
+	if err := chi.Walk(mux, func(method, route string, _ http.Handler, _ ...func(http.Handler) http.Handler) error {
+		routes[method+" "+route] = true
+		return nil
+	}); err != nil {
+		t.Fatalf("chi.Walk: %v", err)
+	}
+
+	for _, want := range []string{
+		"GET /areas",
+		"GET /lines",
+		"GET /graph/api/hourly/{line_id}",
+		"GET /graph/api/dailynok/{line_id}",
+		"GET /graph/api/monthly/{line_id}",
+	} {
+		if !routes[want] {
+			t.Errorf("route %s is not registered", want)
+		}
+	}
+}
+
 func TestSwaggerSpecContainsRoutes(t *testing.T) {
 	data, err := os.ReadFile("./static/swagger.json")
 	if err != nil {
@@ -74,6 +102,8 @@ func TestSwaggerSpecContainsRoutes(t *testing.T) {
 		"/graph/api/dailynok/{line_id}",
 		"/graph/api/monthly/{line_id}",
 		"/graph/api/monthlynok/{line_id}",
+		"/areas",
+		"/lines",
 		"/scrap/insertTicket",
 		"/scrap/updatePerson",
 		"/scrap/updateRequester",

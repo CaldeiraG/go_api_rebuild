@@ -757,6 +757,74 @@
         }
       }
     },
+    "/areas": {
+      "get": {
+        "tags": ["Intranet"],
+        "summary": "List areas",
+        "description": "Get all rows from [Intranet].[dbo].[areas].",
+        "operationId": "listAreas",
+        "responses": {
+          "200": {
+            "description": "Areas",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "id": {"type": "integer"},
+                      "name": {"type": "string"},
+                      "description": {"type": "string"},
+                      "production": {"type": "integer"},
+                      "type": {"type": "string"},
+                      "IsActive": {"type": "integer"}
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {"description": "Internal error"}
+        }
+      }
+    },
+    "/lines": {
+      "get": {
+        "tags": ["Intranet"],
+        "summary": "List lines",
+        "description": "Get all rows from [Intranet].[dbo].[lines].",
+        "operationId": "listLines",
+        "responses": {
+          "200": {
+            "description": "Lines",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "id": {"type": "integer"},
+                      "area_id": {"type": "integer"},
+                      "name": {"type": "string"},
+                      "description": {"type": "string"},
+                      "IsActive": {"type": "integer"},
+                      "Obj_TCiclo": {"type": "number"},
+                      "Obj_OEE": {"type": "number"},
+                      "Obj_FTT": {"type": "number"},
+                      "Obj_Downtime": {"type": "number"},
+                      "Obj_Scrap": {"type": "number"}
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {"description": "Internal error"}
+        }
+      }
+    },
     "/scrap/insertTicket": {
       "get": {
         "tags": ["Scrap"],
@@ -831,6 +899,7 @@
     {"name": "Schedule"},
     {"name": "Scrap"},
     {"name": "Graph"},
+    {"name": "Intranet"},
     {"name": "Monitoring"}
   ],
   "openapi": "3.0.0"

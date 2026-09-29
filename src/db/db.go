@@ -61,3 +61,12 @@ const ProductionGEN5 = `CREATE TABLE #prod
 insert into #prod EXEC [dbo].[sp_HANON_CalculateProductionStatistics] @runMode = 10
 select Hour as hora, Timestamp, A_Total_OK, A_Total_NOK, B_Total_OK, B_Total_NOK, C1_Total_OK, C1_Total_NOK,C2_Total_OK,C2_Total_NOK,D_Total_OK,D_Total_NOK from #prod
 drop table #prod`
+
+// Intranet master data (areas / lines).
+const SqlAreas = `SELECT [id], [name], [description], [production], [type], [IsActive]
+				   FROM [Intranet].[dbo].[areas]
+				   ORDER BY [id]`
+
+const SqlLines = `SELECT [id], [area_id], [name], [description], [IsActive], [Obj_TCiclo], [Obj_OEE], [Obj_FTT], [Obj_Downtime], [Obj_Scrap]
+				   FROM [Intranet].[dbo].[lines]
+				   ORDER BY [id]`

@@ -134,6 +134,7 @@ func buildRouter(doc redoc.Redoc) http.Handler {
 	r.Mount("/scrap", api.ScrapRouter())
 	r.Mount("/com", api.HeartbeatRouter())
 	r.Mount("/graph/api", api.GraphRouter())
+	api.RegisterIntranet(r)
 	// =================
 	// Initialize API Documentation
 	// =================
