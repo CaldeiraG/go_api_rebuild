@@ -60,14 +60,14 @@
     "shiftEnd": "16:30"
   },
   "55": {
-    "name": "R744 Motor Housing A",
-    "databaseInUse": "[R744_Clone].[dbo].[hanon_motorhousing_table]",
+    "name": "R744 Line A2",
+    "databaseInUse": "[R744_Clone].[dbo].[LineA2]",
     "ID": "MINDEX",
     "dateTime": "TIME_STAMP",
     "param": "AND WRITE_STATION = '72' AND (REJECTED IS NULL OR REJECTED = 0)",
     "paramRej": "AND REJECTED = 1",
     "paramModel": "",
-    "model_id": "model_id",
+    "model_id": "PART_NUMBER",
     "shiftStart": "08:00",
     "shiftEnd": "16:30"
   },
@@ -144,18 +144,18 @@
     "shiftEnd": "16:30"
   },
   "92": {
-    "name": "Gen4 Inverter Soldering",
-    "databaseInUse": "[GEN4_Inverter].[dbo].[INVERTER_LINE3_SOLDERING]",
-    "ID": "MINDEX",
-    "dateTime": "TIME_STAMP",
-    "param": "WRITE_STATION = '9'",
-    "paramRej": "CYCLE_TIME = 0",
-    "paramModel": "AND PN_INVERTER like '%$modelFAssy%' AND ",
-    "model_id": "BARCODE_1",
+    "name": "BPV",
+    "databaseInUse": "[R744_Clone].[dbo].[BPV_ProductionData]",
+    "ID": "[ID]",
+    "dateTime": "DateCreated",
+    "param": "AND RESULT = 1",
+    "paramRej": "AND RESULT = 2",
+    "paramModel": "AND RIGHT(RTRIM(PN_INVERTER), 7)",
+    "model_id": "RIGHT(RTRIM(PN_INVERTER), 7",
     "shiftStart": "08:00",
     "shiftEnd": "16:30"
   },
-  "93": {
+  "97": {
     "name": "Gen4 Inverter Soldering Line 1",
     "databaseInUse": "[GEN4_Inverter].[dbo].[INVERTER_LINE1_SOLDERING]",
     "ID": "MINDEX",
@@ -163,6 +163,18 @@
     "param": "WRITE_STATION = '9'",
     "paramRej": "ST09_CYCLE_TIME = 0",
     "paramModel": "AND PN_INVERTER like '%$modelFAssy%' AND ",
+    "model_id": "BARCODE_1",
+    "shiftStart": "08:00",
+    "shiftEnd": "16:30"
+  },
+  "96": {
+    "name": "Gen4 Inverter Soldering Line 3",
+    "databaseInUse": "[GEN4_Inverter].[dbo].[INVERTER_LINE3_SOLDERING]",
+    "ID": "MINDEX",
+    "dateTime": "TIME_STAMP",
+    "param": "AND WRITE_STATION = '9'",
+    "paramRej": "AND CYCLE_TIME = 0",
+    "paramModel": "",
     "model_id": "ST09_BARCODE_1",
     "shiftStart": "08:00",
     "shiftEnd": "16:30"
