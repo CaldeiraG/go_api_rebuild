@@ -75,3 +75,16 @@ const SqlLinesByArea = `SELECT [id], [area_id], [name], [description], [IsActive
 						FROM [Intranet].[dbo].[lines]
 						WHERE [area_id] = @area_id
 						ORDER BY [id]`
+
+const SqlHourlyObjectives = `SELECT [line_id], [line_name],
+					   [0], [1], [2], [3], [4], [5], [6], [7], [8], [9], [10], [11],
+					   [12], [13], [14], [15], [16], [17], [18], [19], [20], [21], [22], [23]
+				   FROM [Intranet].[dbo].[Hourly_Objective]
+				   ORDER BY [line_id]`
+
+const SqlHourlyObjectivesByLine = `SELECT [line_id], [line_name],
+					   [0], [1], [2], [3], [4], [5], [6], [7], [8], [9], [10], [11],
+					   [12], [13], [14], [15], [16], [17], [18], [19], [20], [21], [22], [23]
+				   FROM [Intranet].[dbo].[Hourly_Objective]
+				   WHERE [line_id] = @line_id
+				   ORDER BY [line_id]`

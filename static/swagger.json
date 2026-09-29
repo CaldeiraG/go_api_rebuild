@@ -944,6 +944,89 @@
         }
       }
     },
+    "/intranet/hourly-objectives": {
+      "get": {
+        "tags": ["Intranet"],
+        "summary": "List hourly objectives",
+        "description": "Get hourly objectives per line from [Intranet].[dbo].[Hourly_Objective]. The 24 hourly columns are returned as a nested 'hours' array indexed 0-23.",
+        "operationId": "listHourlyObjectives",
+        "parameters": [
+          {
+            "name": "line_id",
+            "in": "query",
+            "description": "Only return the objective for this line",
+            "required": false,
+            "schema": {"type": "integer"}
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Hourly objectives",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "line_id": {"type": "integer"},
+                      "line_name": {"type": "string"},
+                      "hours": {
+                        "type": "array",
+                        "items": {"type": "number", "nullable": true}
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {"description": "Internal error"}
+        }
+      }
+    },
+    "/intranet/hourly-objectives/{line_id}": {
+      "get": {
+        "tags": ["Intranet"],
+        "summary": "Get hourly objectives for a line",
+        "description": "Get the hourly objective row for one line from [Intranet].[dbo].[Hourly_Objective], with the 24 hourly columns as a nested 'hours' array.",
+        "operationId": "getHourlyObjective",
+        "parameters": [
+          {
+            "name": "line_id",
+            "in": "path",
+            "description": "Line ID",
+            "required": true,
+            "schema": {"type": "integer"}
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Hourly objective",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "line_id": {"type": "integer"},
+                      "line_name": {"type": "string"},
+                      "hours": {
+                        "type": "array",
+                        "items": {"type": "number", "nullable": true}
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {"description": "Invalid line_id"},
+          "500": {"description": "Internal error"}
+        }
+      }
+    },
     "/scrap/insertTicket": {
       "get": {
         "tags": ["Scrap"],

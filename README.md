@@ -62,6 +62,8 @@ documentation.
 | GET    | `/intranet/areas`                        | List Intranet areas                |
 | GET    | `/intranet/lines`                        | List Intranet lines (optional `?area_id=`) |
 | GET    | `/intranet/lines/{area_id}`              | List Intranet lines for an area    |
+| GET    | `/intranet/hourly-objectives`            | Hourly objectives per line (optional `?line_id=`) |
+| GET    | `/intranet/hourly-objectives/{line_id}`  | Hourly objectives for one line     |
 | GET    | `/graph/api/hourly/{line_id}`            | Hourly production by shift         |
 | GET    | `/graph/api/hourlynok/{line_id}`         | Hourly NOK by shift                |
 | GET    | `/graph/api/daily/{line_id}`             | Daily production totals by model   |

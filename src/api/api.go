@@ -84,6 +84,8 @@ func IntranetRouter() chi.Router {
 	intranetRoute.Get("/areas", intranet.Areas)
 	intranetRoute.Get("/lines", intranet.Lines)
 	intranetRoute.Get("/lines/{area_id}", intranet.Lines)
+	intranetRoute.Get("/hourly-objectives", intranet.HourlyObjectives)
+	intranetRoute.Get("/hourly-objectives/{line_id}", intranet.HourlyObjectives)
 
 	// Return the Sub-Route back to the main API Router in main.go
 	return intranetRoute
