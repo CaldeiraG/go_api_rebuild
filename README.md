@@ -73,7 +73,9 @@ documentation.
 | GET    | `/graph/api/models/{line_id}`            | Distinct models observed by a line |
 
 The graph endpoints accept `startDate` and `endDate` query parameters in
-`YYYY-MM-DD` format.
+`YYYY-MM-DD` format, plus an optional `model` filter (repeatable and/or
+comma-separated, e.g. `?model=A123,B456`) that is substituted as a
+parameterized `IN` list where a line defines a model filter.
 
 ## Build
 

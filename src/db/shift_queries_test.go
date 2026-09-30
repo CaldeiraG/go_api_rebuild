@@ -65,7 +65,7 @@ func TestGetAllShiftsForDate(t *testing.T) {
 func TestBuildShiftQueryStandard(t *testing.T) {
 	qb := newTestBuilder(t, testConfig)
 
-	shift1, err := qb.BuildShiftQuery("52", testDate, Shift1)
+	shift1, _, err := qb.BuildShiftQuery("52", testDate, Shift1)
 	if err != nil {
 		t.Fatalf("BuildShiftQuery: %v", err)
 	}
@@ -84,14 +84,12 @@ func TestBuildShiftQueryStandard(t *testing.T) {
 	if strings.Contains(shift1, "REJECTED = 1") {
 		t.Errorf("shift 1 query should not contain the NOK condition:\n%s", shift1)
 	}
-	// paramModel is disabled until the model-check endpoint substitutes
-	// $modelFAssy.
-	if strings.Contains(shift1, "AND PN like '%X%' AND ") ||
-		strings.Contains(shift1, "$modelFAssy") {
-		t.Errorf("paramModel should not be applied yet:\n%s", shift1)
+	// Without a requested model the paramModel filter is skipped.
+	if strings.Contains(shift1, "$modelFAssy") {
+		t.Errorf("paramModel should be skipped when no model is requested:\n%s", shift1)
 	}
 
-	shift2, err := qb.BuildShiftQuery("52", testDate, Shift2)
+	shift2, _, err := qb.BuildShiftQuery("52", testDate, Shift2)
 	if err != nil {
 		t.Fatalf("BuildShiftQuery: %v", err)
 	}
@@ -100,7 +98,7 @@ func TestBuildShiftQueryStandard(t *testing.T) {
 		t.Errorf("shift 2 query has wrong window:\n%s", shift2)
 	}
 
-	shift3, err := qb.BuildShiftQuery("52", testDate, Shift3)
+	shift3, _, err := qb.BuildShiftQuery("52", testDate, Shift3)
 	if err != nil {
 		t.Fatalf("BuildShiftQuery: %v", err)
 	}
@@ -113,7 +111,7 @@ func TestBuildShiftQueryStandard(t *testing.T) {
 func TestBuildShiftQueryGen5UsesFullDay(t *testing.T) {
 	qb := newTestBuilder(t, testConfig)
 
-	query, err := qb.BuildShiftQuery("1107", testDate, Shift1)
+	query, _, err := qb.BuildShiftQuery("1107", testDate, Shift1)
 	if err != nil {
 		t.Fatalf("BuildShiftQuery: %v", err)
 	}
@@ -129,11 +127,11 @@ func TestBuildShiftQueryGen5UsesFullDay(t *testing.T) {
 func TestBuildShiftQueryNOKGen5MatchesOKWindow(t *testing.T) {
 	qb := newTestBuilder(t, testConfig)
 
-	ok, err := qb.BuildShiftQuery("1107", testDate, Shift1)
+	ok, _, err := qb.BuildShiftQuery("1107", testDate, Shift1)
 	if err != nil {
 		t.Fatalf("BuildShiftQuery: %v", err)
 	}
-	nok, err := qb.BuildShiftQueryNOK("1107", testDate, Shift1)
+	nok, _, err := qb.BuildShiftQueryNOK("1107", testDate, Shift1)
 	if err != nil {
 		t.Fatalf("BuildShiftQueryNOK: %v", err)
 	}
@@ -156,7 +154,7 @@ func TestBuildShiftQueryNOKGen5MatchesOKWindow(t *testing.T) {
 func TestBuildShiftQueryNOKStandardUsesParamRej(t *testing.T) {
 	qb := newTestBuilder(t, testConfig)
 
-	nok, err := qb.BuildShiftQueryNOK("52", testDate, Shift1)
+	nok, _, err := qb.BuildShiftQueryNOK("52", testDate, Shift1)
 	if err != nil {
 		t.Fatalf("BuildShiftQueryNOK: %v", err)
 	}
@@ -193,14 +191,14 @@ func TestBuildShiftQueryEmptyModelID(t *testing.T) {
 
 	builders := []struct {
 		name  string
-		build func(string, time.Time, ShiftType) (string, error)
+		build func(string, time.Time, ShiftType) (string, []interface{}, error)
 	}{
 		{"hourly", qb.BuildShiftQuery},
 		{"hourlynok", qb.BuildShiftQueryNOK},
 	}
 
 	for _, b := range builders {
-		query, err := b.build("42", testDate, Shift1)
+		query, _, err := b.build("42", testDate, Shift1)
 		if err != nil {
 			t.Fatalf("%s: %v", b.name, err)
 		}
@@ -241,13 +239,46 @@ func TestShiftForHour(t *testing.T) {
 	}
 }
 
+func TestBuildShiftQueryWithModels(t *testing.T) {
+	qb := newTestBuilder(t, testConfig).WithModels([]string{"A123", "B456"})
+
+	query, args, err := qb.BuildShiftQuery("52", testDate, Shift1)
+	if err != nil {
+		t.Fatalf("BuildShiftQuery: %v", err)
+	}
+	if !strings.Contains(query, "MINDEX in (@model0,@model1)") {
+		t.Errorf("query should contain a parameterized model list:\n%s", query)
+	}
+	if strings.Contains(query, "$modelFAssy") {
+		t.Errorf("placeholder should have been substituted:\n%s", query)
+	}
+	if len(args) != 2 {
+		t.Fatalf("got %d model args, want 2", len(args))
+	}
+}
+
+func TestBuildShiftQueryNOKWithModels(t *testing.T) {
+	qb := newTestBuilder(t, testConfig).WithModels([]string{"A123"})
+
+	query, args, err := qb.BuildShiftQueryNOK("52", testDate, Shift1)
+	if err != nil {
+		t.Fatalf("BuildShiftQueryNOK: %v", err)
+	}
+	if !strings.Contains(query, "MINDEX in (@model0)") {
+		t.Errorf("NOK query should contain a parameterized model list:\n%s", query)
+	}
+	if len(args) != 1 {
+		t.Fatalf("got %d model args, want 1", len(args))
+	}
+}
+
 func TestBuildShiftQueryUnknownLine(t *testing.T) {
 	qb := newTestBuilder(t, testConfig)
 
-	if _, err := qb.BuildShiftQuery("nope", testDate, Shift1); err == nil {
+	if _, _, err := qb.BuildShiftQuery("nope", testDate, Shift1); err == nil {
 		t.Fatal("expected an error for an unknown line ID")
 	}
-	if _, err := qb.BuildShiftQueryNOK("nope", testDate, Shift1); err == nil {
+	if _, _, err := qb.BuildShiftQueryNOK("nope", testDate, Shift1); err == nil {
 		t.Fatal("expected an error for an unknown line ID")
 	}
 }

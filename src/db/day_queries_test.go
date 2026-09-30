@@ -9,7 +9,7 @@ import (
 func TestBuildDayQueryStandard(t *testing.T) {
 	qb := newTestBuilder(t, testConfig)
 
-	query, err := qb.BuildDayQuery("52", testDate, testDate.AddDate(0, 0, 1))
+	query, _, err := qb.BuildDayQuery("52", testDate, testDate.AddDate(0, 0, 1))
 	if err != nil {
 		t.Fatalf("BuildDayQuery: %v", err)
 	}
@@ -37,7 +37,7 @@ func TestBuildDayQueryStandard(t *testing.T) {
 func TestBuildDayQueryNOKStandard(t *testing.T) {
 	qb := newTestBuilder(t, testConfig)
 
-	query, err := qb.BuildDayQueryNOK("52", testDate, testDate)
+	query, _, err := qb.BuildDayQueryNOK("52", testDate, testDate)
 	if err != nil {
 		t.Fatalf("BuildDayQueryNOK: %v", err)
 	}
@@ -54,12 +54,12 @@ func TestBuildDayQueryEmptyModelID(t *testing.T) {
 
 	for _, build := range []struct {
 		name  string
-		query func(string, time.Time, time.Time) (string, error)
+		query func(string, time.Time, time.Time) (string, []interface{}, error)
 	}{
 		{"daily", qb.BuildDayQuery},
 		{"dailynok", qb.BuildDayQueryNOK},
 	} {
-		query, err := build.query("42", testDate, testDate)
+		query, _, err := build.query("42", testDate, testDate)
 		if err != nil {
 			t.Fatalf("%s: %v", build.name, err)
 		}
@@ -75,7 +75,7 @@ func TestBuildDayQueryEmptyModelID(t *testing.T) {
 func TestBuildDayQueryGen5(t *testing.T) {
 	qb := newTestBuilder(t, testConfig)
 
-	ok, err := qb.BuildDayQuery("1107", testDate, testDate)
+	ok, _, err := qb.BuildDayQuery("1107", testDate, testDate)
 	if err != nil {
 		t.Fatalf("BuildDayQuery: %v", err)
 	}
@@ -94,7 +94,7 @@ func TestBuildDayQueryGen5(t *testing.T) {
 		}
 	}
 
-	nok, err := qb.BuildDayQueryNOK("1107", testDate, testDate)
+	nok, _, err := qb.BuildDayQueryNOK("1107", testDate, testDate)
 	if err != nil {
 		t.Fatalf("BuildDayQueryNOK: %v", err)
 	}
@@ -106,13 +106,31 @@ func TestBuildDayQueryGen5(t *testing.T) {
 	}
 }
 
+func TestBuildDayQueryWithModels(t *testing.T) {
+	qb := newTestBuilder(t, testConfig).WithModels([]string{"A123", "B456"})
+
+	query, args, err := qb.BuildDayQuery("52", testDate, testDate)
+	if err != nil {
+		t.Fatalf("BuildDayQuery: %v", err)
+	}
+	if !strings.Contains(query, "MINDEX in (@model0,@model1)") {
+		t.Errorf("day query should contain a parameterized model list:\n%s", query)
+	}
+	if strings.Contains(query, "$modelFAssy") {
+		t.Errorf("placeholder should have been substituted:\n%s", query)
+	}
+	if len(args) != 2 {
+		t.Fatalf("got %d model args, want 2", len(args))
+	}
+}
+
 func TestBuildDayQueryUnknownLine(t *testing.T) {
 	qb := newTestBuilder(t, testConfig)
 
-	if _, err := qb.BuildDayQuery("nope", testDate, testDate); err == nil {
+	if _, _, err := qb.BuildDayQuery("nope", testDate, testDate); err == nil {
 		t.Fatal("expected an error for an unknown line ID")
 	}
-	if _, err := qb.BuildDayQueryNOK("nope", testDate, testDate); err == nil {
+	if _, _, err := qb.BuildDayQueryNOK("nope", testDate, testDate); err == nil {
 		t.Fatal("expected an error for an unknown line ID")
 	}
 }

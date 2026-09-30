@@ -14,7 +14,7 @@ var (
 func TestBuildMonthQueryStandard(t *testing.T) {
 	qb := newTestBuilder(t, testConfig)
 
-	query, err := qb.BuildMonthQuery("52", monthStart, monthEnd)
+	query, _, err := qb.BuildMonthQuery("52", monthStart, monthEnd)
 	if err != nil {
 		t.Fatalf("BuildMonthQuery: %v", err)
 	}
@@ -38,7 +38,7 @@ func TestBuildMonthQueryStandard(t *testing.T) {
 func TestBuildMonthQueryNOKStandard(t *testing.T) {
 	qb := newTestBuilder(t, testConfig)
 
-	query, err := qb.BuildMonthQueryNOK("52", monthStart, monthEnd)
+	query, _, err := qb.BuildMonthQueryNOK("52", monthStart, monthEnd)
 	if err != nil {
 		t.Fatalf("BuildMonthQueryNOK: %v", err)
 	}
@@ -55,12 +55,12 @@ func TestBuildMonthQueryEmptyModelID(t *testing.T) {
 
 	for _, build := range []struct {
 		name  string
-		query func(string, time.Time, time.Time) (string, error)
+		query func(string, time.Time, time.Time) (string, []interface{}, error)
 	}{
 		{"monthly", qb.BuildMonthQuery},
 		{"monthlynok", qb.BuildMonthQueryNOK},
 	} {
-		query, err := build.query("42", monthStart, monthEnd)
+		query, _, err := build.query("42", monthStart, monthEnd)
 		if err != nil {
 			t.Fatalf("%s: %v", build.name, err)
 		}
@@ -73,7 +73,7 @@ func TestBuildMonthQueryEmptyModelID(t *testing.T) {
 func TestBuildMonthQueryGen5(t *testing.T) {
 	qb := newTestBuilder(t, testConfig)
 
-	ok, err := qb.BuildMonthQuery("1107", monthStart, monthEnd)
+	ok, _, err := qb.BuildMonthQuery("1107", monthStart, monthEnd)
 	if err != nil {
 		t.Fatalf("BuildMonthQuery: %v", err)
 	}
@@ -90,7 +90,7 @@ func TestBuildMonthQueryGen5(t *testing.T) {
 		}
 	}
 
-	nok, err := qb.BuildMonthQueryNOK("1107", monthStart, monthEnd)
+	nok, _, err := qb.BuildMonthQueryNOK("1107", monthStart, monthEnd)
 	if err != nil {
 		t.Fatalf("BuildMonthQueryNOK: %v", err)
 	}
@@ -102,10 +102,10 @@ func TestBuildMonthQueryGen5(t *testing.T) {
 func TestBuildMonthQueryUnknownLine(t *testing.T) {
 	qb := newTestBuilder(t, testConfig)
 
-	if _, err := qb.BuildMonthQuery("nope", monthStart, monthEnd); err == nil {
+	if _, _, err := qb.BuildMonthQuery("nope", monthStart, monthEnd); err == nil {
 		t.Fatal("expected an error for an unknown line ID")
 	}
-	if _, err := qb.BuildMonthQueryNOK("nope", monthStart, monthEnd); err == nil {
+	if _, _, err := qb.BuildMonthQueryNOK("nope", monthStart, monthEnd); err == nil {
 		t.Fatal("expected an error for an unknown line ID")
 	}
 }

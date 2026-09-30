@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/caldeirag/go-api/src/db"
@@ -38,39 +39,19 @@ func SendErrorResponse(w http.ResponseWriter, statusCode int, message, code stri
 	_ = json.NewEncoder(w).Encode(errorResponse{Error: message, Code: code})
 }
 
-// QueryFunc builds the hourly query for a line, date and shift.
-type QueryFunc func(*db.ProdQueryBuilder, string, time.Time, db.ShiftType) (string, error)
+// QueryFunc builds the hourly query for a line, date and shift, returning the
+// SQL and its bound arguments.
+type QueryFunc func(*db.ProdQueryBuilder, string, time.Time, db.ShiftType) (string, []interface{}, error)
 
 // Hourly handles an hourly graph request:
 // GET /graph/api/{hourly|hourlynok}/{line_id}?startDate=YYYY-MM-DD&endDate=YYYY-MM-DD
 func Hourly(w http.ResponseWriter, r *http.Request, build QueryFunc) {
-	lineID := chi.URLParam(r, "line_id")
-	startDateStr := r.URL.Query().Get("startDate")
-	endDateStr := r.URL.Query().Get("endDate")
-
-	if lineID == "" || startDateStr == "" || endDateStr == "" {
-		SendErrorResponse(w, http.StatusBadRequest, "Missing required parameters", "MISSING_PARAMETERS")
+	lineID, startDate, endDate, models, ok := parseLineRange(w, r)
+	if !ok {
 		return
 	}
 
-	startDate, err := time.Parse("2006-01-02", startDateStr)
-	if err != nil {
-		SendErrorResponse(w, http.StatusBadRequest, "Invalid startDate format", "INVALID_DATE")
-		return
-	}
-
-	endDate, err := time.Parse("2006-01-02", endDateStr)
-	if err != nil {
-		SendErrorResponse(w, http.StatusBadRequest, "Invalid endDate format", "INVALID_DATE")
-		return
-	}
-
-	if endDate.Before(startDate) {
-		SendErrorResponse(w, http.StatusBadRequest, "endDate must be after or equal to startDate", "INVALID_DATE_RANGE")
-		return
-	}
-
-	qb := db.NewProdQueryBuilder()
+	qb := db.NewProdQueryBuilder().WithModels(models)
 
 	line, exists, err := qb.LineConfig(lineID)
 	if err != nil {
@@ -87,13 +68,13 @@ func Hourly(w http.ResponseWriter, r *http.Request, build QueryFunc) {
 
 	for date := startDate; !date.After(endDate); date = date.AddDate(0, 0, 1) {
 		for _, shift := range qb.GetAllShiftsForDate(date, lineID) {
-			query, err := build(qb, lineID, date, shift.ShiftType)
+			query, args, err := build(qb, lineID, date, shift.ShiftType)
 			if err != nil {
 				results = append(results, errorResult(lineID, date, shift.ShiftType, err))
 				continue
 			}
 
-			rows, err := db.DB.QueryContext(r.Context(), query)
+			rows, err := db.DB.QueryContext(r.Context(), query, args...)
 			if err != nil {
 				results = append(results, errorResult(lineID, date, shift.ShiftType,
 					fmt.Errorf("database query failed: %w", err)))
@@ -209,7 +190,7 @@ type MonthlyResponse struct {
 
 // PeriodQueryFunc builds a whole-period (day or month) query for a line over
 // an inclusive range.
-type PeriodQueryFunc func(*db.ProdQueryBuilder, string, time.Time, time.Time) (string, error)
+type PeriodQueryFunc func(*db.ProdQueryBuilder, string, time.Time, time.Time) (string, []interface{}, error)
 
 type periodRow struct {
 	period string
@@ -258,39 +239,54 @@ func Monthly(w http.ResponseWriter, r *http.Request, build PeriodQueryFunc) {
 }
 
 // parseLineRange reads and validates the {line_id}, startDate and endDate
-// shared by the graph endpoints, writing an error response on failure.
-func parseLineRange(w http.ResponseWriter, r *http.Request) (string, time.Time, time.Time, bool) {
+// shared by the graph endpoints, plus the optional model filter, writing an
+// error response on failure.
+func parseLineRange(w http.ResponseWriter, r *http.Request) (string, time.Time, time.Time, []string, bool) {
 	lineID := chi.URLParam(r, "line_id")
 	startDateStr := r.URL.Query().Get("startDate")
 	endDateStr := r.URL.Query().Get("endDate")
 
 	if lineID == "" || startDateStr == "" || endDateStr == "" {
 		SendErrorResponse(w, http.StatusBadRequest, "Missing required parameters", "MISSING_PARAMETERS")
-		return "", time.Time{}, time.Time{}, false
+		return "", time.Time{}, time.Time{}, nil, false
 	}
 
 	startDate, err := time.Parse("2006-01-02", startDateStr)
 	if err != nil {
 		SendErrorResponse(w, http.StatusBadRequest, "Invalid startDate format", "INVALID_DATE")
-		return "", time.Time{}, time.Time{}, false
+		return "", time.Time{}, time.Time{}, nil, false
 	}
 
 	endDate, err := time.Parse("2006-01-02", endDateStr)
 	if err != nil {
 		SendErrorResponse(w, http.StatusBadRequest, "Invalid endDate format", "INVALID_DATE")
-		return "", time.Time{}, time.Time{}, false
+		return "", time.Time{}, time.Time{}, nil, false
 	}
 
 	if endDate.Before(startDate) {
 		SendErrorResponse(w, http.StatusBadRequest, "endDate must be after or equal to startDate", "INVALID_DATE_RANGE")
-		return "", time.Time{}, time.Time{}, false
+		return "", time.Time{}, time.Time{}, nil, false
 	}
 
-	return lineID, startDate, endDate, true
+	return lineID, startDate, endDate, parseModels(r), true
+}
+
+// parseModels reads the optional model filter. It accepts repeated ?model=
+// parameters and/or comma-separated values, trimming and dropping empties.
+func parseModels(r *http.Request) []string {
+	var models []string
+	for _, value := range r.URL.Query()["model"] {
+		for _, part := range strings.Split(value, ",") {
+			if model := strings.TrimSpace(part); model != "" {
+				models = append(models, model)
+			}
+		}
+	}
+	return models
 }
 
 // ModelsQueryFunc builds a models query for a line over an inclusive range.
-type ModelsQueryFunc func(*db.ProdQueryBuilder, string, time.Time, time.Time) (string, error)
+type ModelsQueryFunc func(*db.ProdQueryBuilder, string, time.Time, time.Time) (string, []interface{}, error)
 
 // ModelsResponse is one observed model.
 type ModelsResponse struct {
@@ -302,12 +298,12 @@ type ModelsResponse struct {
 //
 // It returns a JSON array of model names observed for the line in the range.
 func Models(w http.ResponseWriter, r *http.Request, build ModelsQueryFunc) {
-	lineID, startDate, endDate, ok := parseLineRange(w, r)
+	lineID, startDate, endDate, models, ok := parseLineRange(w, r)
 	if !ok {
 		return
 	}
 
-	qb := db.NewProdQueryBuilder()
+	qb := db.NewProdQueryBuilder().WithModels(models)
 	if _, exists, err := qb.LineConfig(lineID); err != nil {
 		SendErrorResponse(w, http.StatusInternalServerError, "Failed to load line configuration", "CONFIG_ERROR")
 		return
@@ -316,20 +312,20 @@ func Models(w http.ResponseWriter, r *http.Request, build ModelsQueryFunc) {
 		return
 	}
 
-	query, err := build(qb, lineID, startDate, endDate)
+	query, args, err := build(qb, lineID, startDate, endDate)
 	if err != nil {
 		SendErrorResponse(w, http.StatusInternalServerError, "Failed to build query", "QUERY_ERROR")
 		return
 	}
 
-	rows, err := db.DB.QueryContext(r.Context(), query)
+	rows, err := db.DB.QueryContext(r.Context(), query, args...)
 	if err != nil {
 		SendErrorResponse(w, http.StatusInternalServerError, "Database query failed", "DATABASE_ERROR")
 		return
 	}
 	defer rows.Close()
 
-	models := []ModelsResponse{}
+	results := []ModelsResponse{}
 	for rows.Next() {
 		var model sql.NullString
 		if err := rows.Scan(&model); err != nil {
@@ -337,7 +333,7 @@ func Models(w http.ResponseWriter, r *http.Request, build ModelsQueryFunc) {
 			return
 		}
 		if model.Valid && model.String != "" {
-			models = append(models, ModelsResponse{Model: model.String})
+			results = append(results, ModelsResponse{Model: model.String})
 		}
 	}
 
@@ -346,18 +342,18 @@ func Models(w http.ResponseWriter, r *http.Request, build ModelsQueryFunc) {
 		return
 	}
 
-	writeJSON(w, models)
+	writeJSON(w, results)
 }
 
 // fetchPeriodTotals validates the request, runs the period query and returns
 // its rows. On failure it writes the error response and returns ok=false.
 func fetchPeriodTotals(w http.ResponseWriter, r *http.Request, build PeriodQueryFunc) (string, []periodRow, bool) {
-	lineID, startDate, endDate, ok := parseLineRange(w, r)
+	lineID, startDate, endDate, models, ok := parseLineRange(w, r)
 	if !ok {
 		return "", nil, false
 	}
 
-	qb := db.NewProdQueryBuilder()
+	qb := db.NewProdQueryBuilder().WithModels(models)
 	if _, exists, err := qb.LineConfig(lineID); err != nil {
 		SendErrorResponse(w, http.StatusInternalServerError, "Failed to load line configuration", "CONFIG_ERROR")
 		return "", nil, false
@@ -366,13 +362,13 @@ func fetchPeriodTotals(w http.ResponseWriter, r *http.Request, build PeriodQuery
 		return "", nil, false
 	}
 
-	query, err := build(qb, lineID, startDate, endDate)
+	query, args, err := build(qb, lineID, startDate, endDate)
 	if err != nil {
 		SendErrorResponse(w, http.StatusInternalServerError, "Failed to build query", "QUERY_ERROR")
 		return "", nil, false
 	}
 
-	rows, err := db.DB.QueryContext(r.Context(), query)
+	rows, err := db.DB.QueryContext(r.Context(), query, args...)
 	if err != nil {
 		SendErrorResponse(w, http.StatusInternalServerError, "Database query failed", "DATABASE_ERROR")
 		return "", nil, false

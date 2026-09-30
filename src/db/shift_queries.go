@@ -1,6 +1,7 @@
 package db
 
 import (
+	"database/sql"
 	"fmt"
 	"strings"
 	"time"
@@ -69,8 +70,7 @@ func ShiftForHour(hour int) ShiftType {
 
 // addCondition appends a WHERE condition, ensuring a single " AND " separator.
 // A leading "AND" is stripped so both "REJECTED = 0" and "AND REJECTED = 0"
-// work, which matters now that the model prefix that used to supply the
-// connector is disabled.
+// work.
 func addCondition(whereClause, condition string) string {
 	condition = strings.TrimSpace(condition)
 	if len(condition) >= 4 && strings.EqualFold(condition[:4], "and ") {
@@ -80,6 +80,38 @@ func addCondition(whereClause, condition string) string {
 		return whereClause
 	}
 	return whereClause + " AND " + condition
+}
+
+// modelCondition substitutes the $modelFAssy placeholder in a config paramModel
+// fragment with a parameterized IN list built from the builder's models. It
+// returns an empty condition when there is nothing to filter. Values are
+// trimmed and bound as parameters (never concatenated) so the predicate stays
+// sargable and injection-safe.
+func (qb *ProdQueryBuilder) modelCondition(paramModel string) (string, []interface{}) {
+	paramModel = strings.TrimSpace(paramModel)
+	// Only fragments using the $modelFAssy placeholder are supported, and only
+	// when the request actually asked for models.
+	if paramModel == "" || !strings.Contains(paramModel, "$modelFAssy") || len(qb.models) == 0 {
+		return "", nil
+	}
+
+	holders := make([]string, 0, len(qb.models))
+	args := make([]interface{}, 0, len(qb.models))
+	for i, model := range qb.models {
+		name := fmt.Sprintf("model%d", i)
+		holders = append(holders, "@"+name)
+		args = append(args, sql.Named(name, strings.TrimSpace(model)))
+	}
+	condition := strings.ReplaceAll(paramModel, "$modelFAssy", strings.Join(holders, ","))
+
+	// paramModel is a fragment like "AND col in (...) AND "; drop the leading
+	// and trailing connectors so addCondition can append it as one condition.
+	condition = strings.TrimSpace(condition)
+	if len(condition) >= 3 && strings.EqualFold(condition[len(condition)-3:], "and") {
+		condition = strings.TrimSpace(condition[:len(condition)-3])
+	}
+
+	return condition, args
 }
 
 // trimmedModelExpr returns a SQL expression for a model column with leading and
@@ -119,15 +151,15 @@ func (qb *ProdQueryBuilder) BuildShiftQuery(
 	lineID string,
 	date time.Time,
 	shiftType ShiftType,
-) (string, error) {
+) (string, []interface{}, error) {
 	configMap, err := qb.LoadConfig()
 	if err != nil {
-		return "", fmt.Errorf("failed to load config: %w", err)
+		return "", nil, fmt.Errorf("failed to load config: %w", err)
 	}
 
 	lineConfig, exists := configMap[lineID]
 	if !exists {
-		return "", fmt.Errorf("line ID %s not found in configuration", lineID)
+		return "", nil, fmt.Errorf("line ID %s not found in configuration", lineID)
 	}
 
 	// Calculate shift time range based on shift type
@@ -184,9 +216,9 @@ func (qb *ProdQueryBuilder) BuildShiftQuery(
 		}
 	}
 
-	// paramModel is intentionally not applied yet: its value still contains the
-	// legacy $modelFAssy placeholder, which needs the model-check endpoint to be
-	// substituted. Re-enable by appending lineConfig.ParamModel here.
+	// Add the model filter (if models were requested).
+	modelCond, modelArgs := qb.modelCondition(lineConfig.ParamModel)
+	whereClause = addCondition(whereClause, modelCond)
 
 	// Add param condition
 	whereClause = addCondition(whereClause, lineConfig.Param)
@@ -214,7 +246,7 @@ func (qb *ProdQueryBuilder) BuildShiftQuery(
 		query = standardHourlyQuery(lineConfig, whereClause)
 	}
 
-	return query, nil
+	return query, modelArgs, nil
 }
 
 // GetShiftProduction builds production query for a 24-hour shift (using param for OK)
@@ -222,7 +254,7 @@ func (qb *ProdQueryBuilder) GetShiftProduction(
 	lineID string,
 	date time.Time,
 	shiftType ShiftType,
-) (string, error) {
+) (string, []interface{}, error) {
 	return qb.BuildShiftQuery(lineID, date, shiftType)
 }
 
@@ -231,7 +263,7 @@ func (qb *ProdQueryBuilder) GetShiftProductionNOK(
 	lineID string,
 	date time.Time,
 	shiftType ShiftType,
-) (string, error) {
+) (string, []interface{}, error) {
 	return qb.BuildShiftQueryNOK(lineID, date, shiftType)
 }
 
@@ -240,15 +272,15 @@ func (qb *ProdQueryBuilder) BuildShiftQueryNOK(
 	lineID string,
 	date time.Time,
 	shiftType ShiftType,
-) (string, error) {
+) (string, []interface{}, error) {
 	configMap, err := qb.LoadConfig()
 	if err != nil {
-		return "", fmt.Errorf("failed to load config: %w", err)
+		return "", nil, fmt.Errorf("failed to load config: %w", err)
 	}
 
 	lineConfig, exists := configMap[lineID]
 	if !exists {
-		return "", fmt.Errorf("line ID %s not found in configuration", lineID)
+		return "", nil, fmt.Errorf("line ID %s not found in configuration", lineID)
 	}
 
 	// Calculate shift time range based on shift type
@@ -306,9 +338,9 @@ func (qb *ProdQueryBuilder) BuildShiftQueryNOK(
 		}
 	}
 
-	// paramModel is intentionally not applied yet: its value still contains the
-	// legacy $modelFAssy placeholder, which needs the model-check endpoint to be
-	// substituted. Re-enable by appending lineConfig.ParamModel here.
+	// Add the model filter (if models were requested).
+	modelCond, modelArgs := qb.modelCondition(lineConfig.ParamModel)
+	whereClause = addCondition(whereClause, modelCond)
 
 	// Add the NOK/line condition. Standard lines use paramRej for defects,
 	// while GEN5 configs express their line selector in param and have no
@@ -341,7 +373,7 @@ func (qb *ProdQueryBuilder) BuildShiftQueryNOK(
 		query = standardHourlyQuery(lineConfig, whereClause)
 	}
 
-	return query, nil
+	return query, modelArgs, nil
 }
 
 // GetAllShiftsForDate returns all 3 shift periods for a date

@@ -31,6 +31,14 @@ type ProdQueryConfig struct {
 // ProdQueryBuilder builds queries for production statistics
 type ProdQueryBuilder struct {
 	configPath string
+	models     []string
+}
+
+// WithModels sets the model values substituted for the $modelFAssy placeholder
+// in paramModel and returns the builder for chaining.
+func (qb *ProdQueryBuilder) WithModels(models []string) *ProdQueryBuilder {
+	qb.models = models
+	return qb
 }
 
 // Config cache. The config file is read on every query build; caching by

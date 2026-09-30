@@ -142,49 +142,55 @@ func measureLine(
 	started := time.Now()
 	defer func() { res.elapsed = time.Since(started) }()
 
-	var queries []string
+	type builtQuery struct {
+		sql  string
+		args []interface{}
+	}
+	var queries []builtQuery
 
 	switch kind {
 	case "daily", "dailynok", "monthly", "monthlynok", "models":
 		var query string
+		var args []interface{}
 		var err error
 		switch kind {
 		case "daily":
-			query, err = qb.BuildDayQuery(lineID, date, date)
+			query, args, err = qb.BuildDayQuery(lineID, date, date)
 		case "dailynok":
-			query, err = qb.BuildDayQueryNOK(lineID, date, date)
+			query, args, err = qb.BuildDayQueryNOK(lineID, date, date)
 		case "monthly":
-			query, err = qb.BuildMonthQuery(lineID, date, date)
+			query, args, err = qb.BuildMonthQuery(lineID, date, date)
 		case "monthlynok":
-			query, err = qb.BuildMonthQueryNOK(lineID, date, date)
+			query, args, err = qb.BuildMonthQueryNOK(lineID, date, date)
 		default:
-			query, err = qb.BuildModelsQuery(lineID, date, date)
+			query, args, err = qb.BuildModelsQuery(lineID, date, date)
 		}
 		if err != nil {
 			res.err = err
 			return res
 		}
-		queries = append(queries, query)
+		queries = append(queries, builtQuery{sql: query, args: args})
 	default:
 		for _, shift := range qb.GetAllShiftsForDate(date, lineID) {
 			var query string
+			var args []interface{}
 			var err error
 			if kind == "hourlynok" {
-				query, err = qb.GetShiftProductionNOK(lineID, date, shift.ShiftType)
+				query, args, err = qb.GetShiftProductionNOK(lineID, date, shift.ShiftType)
 			} else {
-				query, err = qb.GetShiftProduction(lineID, date, shift.ShiftType)
+				query, args, err = qb.GetShiftProduction(lineID, date, shift.ShiftType)
 			}
 			if err != nil {
 				res.err = err
 				return res
 			}
-			queries = append(queries, query)
+			queries = append(queries, builtQuery{sql: query, args: args})
 		}
 	}
 	res.queries = len(queries)
 
 	for _, query := range queries {
-		n, err := countRows(ctx, conn, query)
+		n, err := countRows(ctx, conn, query.sql, query.args...)
 		res.rows += n
 		if err != nil {
 			res.err = err
@@ -195,8 +201,8 @@ func measureLine(
 	return res
 }
 
-func countRows(ctx context.Context, conn *sql.DB, query string) (int, error) {
-	rows, err := conn.QueryContext(ctx, query)
+func countRows(ctx context.Context, conn *sql.DB, query string, args ...interface{}) (int, error) {
+	rows, err := conn.QueryContext(ctx, query, args...)
 	if err != nil {
 		return 0, err
 	}

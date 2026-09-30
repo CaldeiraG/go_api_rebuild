@@ -15,7 +15,7 @@ const testConfig = `{
     "dateTime": "TIME_STAMP",
     "param": "REJECTED = 0",
     "paramRej": "REJECTED = 1",
-    "paramModel": "AND PN like '%X%' AND ",
+    "paramModel": "AND MINDEX in ($modelFAssy) AND ",
     "model_id": "MINDEX",
     "paramRejSta": "AND STATION = 1",
     "shiftStart": "08:00",
@@ -72,7 +72,7 @@ func TestLoadConfigParsesFields(t *testing.T) {
 	if line.ParamRej != "REJECTED = 1" {
 		t.Errorf("ParamRej = %q", line.ParamRej)
 	}
-	if line.ParamModel != "AND PN like '%X%' AND " {
+	if line.ParamModel != "AND MINDEX in ($modelFAssy) AND " {
 		t.Errorf("ParamModel = %q", line.ParamModel)
 	}
 	if line.ParamRejSta != "AND STATION = 1" {

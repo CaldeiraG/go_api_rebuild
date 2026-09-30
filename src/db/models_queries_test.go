@@ -8,7 +8,7 @@ import (
 func TestBuildModelsQueryStandard(t *testing.T) {
 	qb := newTestBuilder(t, testConfig)
 
-	query, err := qb.BuildModelsQuery("52", testDate, testDate)
+	query, _, err := qb.BuildModelsQuery("52", testDate, testDate)
 	if err != nil {
 		t.Fatalf("BuildModelsQuery: %v", err)
 	}
@@ -34,7 +34,7 @@ func TestBuildModelsQueryStandard(t *testing.T) {
 func TestBuildModelsQueryEmptyModelID(t *testing.T) {
 	qb := newTestBuilder(t, testConfig)
 
-	query, err := qb.BuildModelsQuery("42", testDate, testDate)
+	query, _, err := qb.BuildModelsQuery("42", testDate, testDate)
 	if err != nil {
 		t.Fatalf("BuildModelsQuery: %v", err)
 	}
@@ -46,7 +46,7 @@ func TestBuildModelsQueryEmptyModelID(t *testing.T) {
 func TestBuildModelsQueryGen5(t *testing.T) {
 	qb := newTestBuilder(t, testConfig)
 
-	query, err := qb.BuildModelsQuery("1107", testDate, testDate)
+	query, _, err := qb.BuildModelsQuery("1107", testDate, testDate)
 	if err != nil {
 		t.Fatalf("BuildModelsQuery: %v", err)
 	}
@@ -65,7 +65,7 @@ func TestBuildModelsQueryGen5(t *testing.T) {
 func TestBuildModelsQueryUnknownLine(t *testing.T) {
 	qb := newTestBuilder(t, testConfig)
 
-	if _, err := qb.BuildModelsQuery("nope", testDate, testDate); err == nil {
+	if _, _, err := qb.BuildModelsQuery("nope", testDate, testDate); err == nil {
 		t.Fatal("expected an error for an unknown line ID")
 	}
 }

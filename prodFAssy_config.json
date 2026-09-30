@@ -114,7 +114,7 @@
     "dateTime": "TIME_STAMP",
     "param": "AND WRITE_STATION = '90' AND (REJECTED IS NULL OR REJECTED = 0)",
     "paramRej": "AND REJECTED = 1",
-    "paramModel": "AND PN_INVERTER like '%$modelFAssy%' AND ",
+    "paramModel": "AND PN_INVERTER in ($modelFAssy) AND ",
     "model_id": "PN_INVERTER",
     "shiftStart": "08:00",
     "shiftEnd": "16:30"
@@ -126,7 +126,7 @@
     "dateTime": "TIME_STAMP",
     "param": "AND WRITE_STATION = '90' AND (REJECTED IS NULL OR REJECTED = 0)",
     "paramRej": "AND REJECTED = 1",
-    "paramModel": "AND PN_INVERTER like '%$modelFAssy%' AND ",
+    "paramModel": "AND PN_INVERTER in ($modelFAssy) AND ",
     "model_id": "PN_INVERTER",
     "shiftStart": "08:00",
     "shiftEnd": "16:30"
@@ -162,7 +162,7 @@
     "dateTime": "TIME_STAMP",
     "param": "WRITE_STATION = '9'",
     "paramRej": "ST09_CYCLE_TIME = 0",
-    "paramModel": "AND PN_INVERTER like '%$modelFAssy%' AND ",
+    "paramModel": "AND PN_INVERTER in ($modelFAssy) AND ",
     "model_id": "BARCODE_1",
     "shiftStart": "08:00",
     "shiftEnd": "16:30"
@@ -186,7 +186,7 @@
     "dateTime": "Date",
     "param": "ErrorCode != 0",
     "paramRej": "ErrorCode = 0",
-    "paramModel": "AND PN_INVERTER like '%$modelFAssy%' AND ",
+    "paramModel": "AND PN_INVERTER in ($modelFAssy) AND ",
     "model_id": "SN_Compressor",
     "shiftStart": "08:00",
     "shiftEnd": "16:30"
@@ -198,7 +198,7 @@
     "dateTime": "DateTime",
     "param": "Result = 1 and TaskName = 'SCREW 1'",
     "paramRej": "Result = 0 and TaskName = 'SCREW 1'",
-    "paramModel": "AND PN_INVERTER like '%$modelFAssy%' AND ",
+    "paramModel": "AND PN_INVERTER in ($modelFAssy) AND ",
     "model_id": "partNum",
     "shiftStart": "08:00",
     "shiftEnd": "16:30"
@@ -210,7 +210,7 @@
     "dateTime": "TIME_STAMP",
     "param": "REJ_STATION = 0",
     "paramRej": "REJECTED = 1",
-    "paramModel": "AND PART_NUMBER like '%$modelFAssy%' AND ",
+    "paramModel": "AND PART_NUMBER in ($modelFAssy) AND ",
     "model_id": "CH_BARCODE",
     "shiftStart": "08:00",
     "shiftEnd": "16:30"
@@ -222,7 +222,7 @@
     "dateTime": "TIME_STAMP",
     "param": "REJ_STATION = 0",
     "paramRej": "REJECTED = 1",
-    "paramModel": "AND PART_NUMBER like '%$modelFAssy%' AND ",
+    "paramModel": "AND PART_NUMBER in ($modelFAssy) AND ",
     "model_id": "FS_BARCODE",
     "shiftStart": "08:00",
     "shiftEnd": "16:30"
@@ -234,7 +234,7 @@
     "dateTime": "TIME_STAMP",
     "param": "REJ_STATION = 0",
     "paramRej": "REJECTED = 1",
-    "paramModel": "AND PART_NUMBER like '%$modelFAssy%' AND ",
+    "paramModel": "AND PART_NUMBER in ($modelFAssy) AND ",
     "model_id": "OS_BARCODE",
     "shiftStart": "08:00",
     "shiftEnd": "16:30"
@@ -246,7 +246,7 @@
     "dateTime": "TIME_STAMP",
     "param": "REJ_STATION = 0",
     "paramRej": "REJECTED = 1",
-    "paramModel": "AND PART_NUMBER like '%$modelFAssy%' AND ",
+    "paramModel": "AND PART_NUMBER in ($modelFAssy) AND ",
     "model_id": "ROTOR_BARCODE",
     "shiftStart": "08:00",
     "shiftEnd": "16:30"
@@ -258,7 +258,7 @@
     "dateTime": "TIME_STAMP",
     "param": "REJ_STATION = 0",
     "paramRej": "REJECTED = 1",
-    "paramModel": "AND PART_NUMBER like '%$modelFAssy%' AND ",
+    "paramModel": "AND PART_NUMBER in ($modelFAssy) AND ",
     "model_id": "RH_BARCODE",
     "shiftStart": "08:00",
     "shiftEnd": "16:30"
@@ -270,7 +270,7 @@
     "dateTime": "TIME_STAMP",
     "param": "REJ_STATION = 0",
     "paramRej": "REJECTED = 1",
-    "paramModel": "AND PART_NUMBER like '%$modelFAssy%' AND ",
+    "paramModel": "AND PART_NUMBER in ($modelFAssy) AND ",
     "model_id": "MH_BARCODE",
     "shiftStart": "08:00",
     "shiftEnd": "16:30"

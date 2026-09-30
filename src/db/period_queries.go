@@ -7,23 +7,23 @@ import (
 
 // BuildDayQuery builds a per-day, per-model OK total over an inclusive date
 // range. Days are calendar days (00:00-24:00).
-func (qb *ProdQueryBuilder) BuildDayQuery(lineID string, startDate, endDate time.Time) (string, error) {
+func (qb *ProdQueryBuilder) BuildDayQuery(lineID string, startDate, endDate time.Time) (string, []interface{}, error) {
 	return qb.buildAggregateQuery(lineID, startDate, endDate, false, "day")
 }
 
 // BuildDayQueryNOK builds the NOK equivalent of BuildDayQuery.
-func (qb *ProdQueryBuilder) BuildDayQueryNOK(lineID string, startDate, endDate time.Time) (string, error) {
+func (qb *ProdQueryBuilder) BuildDayQueryNOK(lineID string, startDate, endDate time.Time) (string, []interface{}, error) {
 	return qb.buildAggregateQuery(lineID, startDate, endDate, true, "day")
 }
 
 // BuildMonthQuery builds a per-month, per-model OK total over an inclusive
 // date range. Months are calendar months (YYYY-MM).
-func (qb *ProdQueryBuilder) BuildMonthQuery(lineID string, startDate, endDate time.Time) (string, error) {
+func (qb *ProdQueryBuilder) BuildMonthQuery(lineID string, startDate, endDate time.Time) (string, []interface{}, error) {
 	return qb.buildAggregateQuery(lineID, startDate, endDate, false, "month")
 }
 
 // BuildMonthQueryNOK builds the NOK equivalent of BuildMonthQuery.
-func (qb *ProdQueryBuilder) BuildMonthQueryNOK(lineID string, startDate, endDate time.Time) (string, error) {
+func (qb *ProdQueryBuilder) BuildMonthQueryNOK(lineID string, startDate, endDate time.Time) (string, []interface{}, error) {
 	return qb.buildAggregateQuery(lineID, startDate, endDate, true, "month")
 }
 
@@ -31,15 +31,15 @@ func (qb *ProdQueryBuilder) BuildMonthQueryNOK(lineID string, startDate, endDate
 // over an inclusive date range. Standard lines read their configured model
 // column; GEN5 shares one table across lines so it is scoped by the line
 // selector. No OK/NOK condition is applied, so every observed model is listed.
-func (qb *ProdQueryBuilder) BuildModelsQuery(lineID string, startDate, endDate time.Time) (string, error) {
+func (qb *ProdQueryBuilder) BuildModelsQuery(lineID string, startDate, endDate time.Time) (string, []interface{}, error) {
 	configMap, err := qb.LoadConfig()
 	if err != nil {
-		return "", fmt.Errorf("failed to load config: %w", err)
+		return "", nil, fmt.Errorf("failed to load config: %w", err)
 	}
 
 	lineConfig, exists := configMap[lineID]
 	if !exists {
-		return "", fmt.Errorf("line ID %s not found in configuration", lineID)
+		return "", nil, fmt.Errorf("line ID %s not found in configuration", lineID)
 	}
 
 	timeCol := lineConfig.DateTime
@@ -57,6 +57,9 @@ func (qb *ProdQueryBuilder) BuildModelsQuery(lineID string, startDate, endDate t
 		whereClause = addCondition(whereClause, lineConfig.Param)
 	}
 
+	modelCond, modelArgs := qb.modelCondition(lineConfig.ParamModel)
+	whereClause = addCondition(whereClause, modelCond)
+
 	whereClause = addCondition(whereClause,
 		fmt.Sprintf("%s IS NOT NULL AND %s <> ''", modelExpr, modelExpr))
 
@@ -65,21 +68,21 @@ func (qb *ProdQueryBuilder) BuildModelsQuery(lineID string, startDate, endDate t
 		FROM %s
 		WHERE %s
 		ORDER BY model
-	`, modelExpr, lineConfig.DatabaseInUse, whereClause), nil
+	`, modelExpr, lineConfig.DatabaseInUse, whereClause), modelArgs, nil
 }
 
 // buildAggregateQuery aggregates a line by calendar period ("day" or "month")
 // and model over an inclusive date range. The period is rendered with
 // CONVERT(..., 23) so days/months never collide across years.
-func (qb *ProdQueryBuilder) buildAggregateQuery(lineID string, startDate, endDate time.Time, nok bool, period string) (string, error) {
+func (qb *ProdQueryBuilder) buildAggregateQuery(lineID string, startDate, endDate time.Time, nok bool, period string) (string, []interface{}, error) {
 	configMap, err := qb.LoadConfig()
 	if err != nil {
-		return "", fmt.Errorf("failed to load config: %w", err)
+		return "", nil, fmt.Errorf("failed to load config: %w", err)
 	}
 
 	lineConfig, exists := configMap[lineID]
 	if !exists {
-		return "", fmt.Errorf("line ID %s not found in configuration", lineID)
+		return "", nil, fmt.Errorf("line ID %s not found in configuration", lineID)
 	}
 
 	timeCol := lineConfig.DateTime
@@ -101,9 +104,12 @@ func (qb *ProdQueryBuilder) buildAggregateQuery(lineID string, startDate, endDat
 		orderBy = "[month], model"
 	}
 
+	modelCond, modelArgs := qb.modelCondition(lineConfig.ParamModel)
+
 	if lineConfig.QueryType == "gen5" {
 		// GEN5 expresses its line selector in param and aggregates OK/NOK.
 		whereClause = addCondition(whereClause, lineConfig.Param)
+		whereClause = addCondition(whereClause, modelCond)
 		modelExpr := trimmedModelExpr("Model", "")
 
 		agg := "SUM(OK)"
@@ -120,7 +126,7 @@ func (qb *ProdQueryBuilder) buildAggregateQuery(lineID string, startDate, endDat
 		WHERE %s
 		GROUP BY %s, %s
 		ORDER BY %s
-	`, periodExpr, periodAlias, modelExpr, agg, lineConfig.DatabaseInUse, whereClause, periodExpr, modelExpr, orderBy), nil
+	`, periodExpr, periodAlias, modelExpr, agg, lineConfig.DatabaseInUse, whereClause, periodExpr, modelExpr, orderBy), modelArgs, nil
 	}
 
 	if nok {
@@ -129,6 +135,7 @@ func (qb *ProdQueryBuilder) buildAggregateQuery(lineID string, startDate, endDat
 		whereClause = addCondition(whereClause, lineConfig.Param)
 	}
 	whereClause = addCondition(whereClause, lineConfig.ParamRejSta)
+	whereClause = addCondition(whereClause, modelCond)
 
 	modelExpr := trimmedModelExpr(lineConfig.ModelID, "'n/a'")
 
@@ -141,5 +148,5 @@ func (qb *ProdQueryBuilder) buildAggregateQuery(lineID string, startDate, endDat
 		WHERE %s
 		GROUP BY %s, %s
 		ORDER BY %s
-	`, periodExpr, periodAlias, modelExpr, lineConfig.ID, lineConfig.DatabaseInUse, whereClause, periodExpr, modelExpr, orderBy), nil
+	`, periodExpr, periodAlias, modelExpr, lineConfig.ID, lineConfig.DatabaseInUse, whereClause, periodExpr, modelExpr, orderBy), modelArgs, nil
 }

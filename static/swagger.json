@@ -328,7 +328,8 @@
             "schema": {
               "type": "string"
             }
-          }
+          },
+          {"$ref": "#/components/parameters/Model"}
         ],
         "responses": {
           "200": {
@@ -425,7 +426,8 @@
             "schema": {
               "type": "string"
             }
-          }
+          },
+          {"$ref": "#/components/parameters/Model"}
         ],
         "responses": {
           "200": {
@@ -516,7 +518,8 @@
             "description": "End date (YYYY-MM-DD)",
             "required": true,
             "schema": {"type": "string"}
-          }
+          },
+          {"$ref": "#/components/parameters/Model"}
         ],
         "responses": {
           "200": {
@@ -583,7 +586,8 @@
             "description": "End date (YYYY-MM-DD)",
             "required": true,
             "schema": {"type": "string"}
-          }
+          },
+          {"$ref": "#/components/parameters/Model"}
         ],
         "responses": {
           "200": {
@@ -650,7 +654,8 @@
             "description": "End date (YYYY-MM-DD)",
             "required": true,
             "schema": {"type": "string"}
-          }
+          },
+          {"$ref": "#/components/parameters/Model"}
         ],
         "responses": {
           "200": {
@@ -717,7 +722,8 @@
             "description": "End date (YYYY-MM-DD)",
             "required": true,
             "schema": {"type": "string"}
-          }
+          },
+          {"$ref": "#/components/parameters/Model"}
         ],
         "responses": {
           "200": {
@@ -907,7 +913,8 @@
             "description": "End date (YYYY-MM-DD)",
             "required": true,
             "schema": {"type": "string"}
-          }
+          },
+          {"$ref": "#/components/parameters/Model"}
         ],
         "responses": {
           "200": {
@@ -1104,5 +1111,16 @@
     {"name": "Intranet"},
     {"name": "Monitoring"}
   ],
+  "components": {
+    "parameters": {
+      "Model": {
+        "name": "model",
+        "in": "query",
+        "description": "Optional model filter; repeatable and/or comma-separated. Applied where the line config defines a model filter.",
+        "required": false,
+        "schema": {"type": "string"}
+      }
+    }
+  },
   "openapi": "3.0.0"
 }

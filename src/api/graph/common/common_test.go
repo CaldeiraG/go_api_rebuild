@@ -52,8 +52,8 @@ func graphRequest(target, lineID string) *http.Request {
 	return req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, rctx))
 }
 
-func errorBuilder(*db.ProdQueryBuilder, string, time.Time, db.ShiftType) (string, error) {
-	return "", errors.New("boom")
+func errorBuilder(*db.ProdQueryBuilder, string, time.Time, db.ShiftType) (string, []interface{}, error) {
+	return "", nil, errors.New("boom")
 }
 
 func decodeError(t *testing.T, rec *httptest.ResponseRecorder) errorResponse {
@@ -127,8 +127,8 @@ func TestDailyBuildError(t *testing.T) {
 	rec := httptest.NewRecorder()
 	Daily(rec, graphRequest(
 		"/graph/api/daily/1?startDate=2026-09-21&endDate=2026-09-21", "1"),
-		func(*db.ProdQueryBuilder, string, time.Time, time.Time) (string, error) {
-			return "", errors.New("boom")
+		func(*db.ProdQueryBuilder, string, time.Time, time.Time) (string, []interface{}, error) {
+			return "", nil, errors.New("boom")
 		})
 
 	if rec.Code != http.StatusInternalServerError {
@@ -200,8 +200,8 @@ func TestMonthlyBuildError(t *testing.T) {
 	rec := httptest.NewRecorder()
 	Monthly(rec, graphRequest(
 		"/graph/api/monthly/1?startDate=2026-09-01&endDate=2026-09-30", "1"),
-		func(*db.ProdQueryBuilder, string, time.Time, time.Time) (string, error) {
-			return "", errors.New("boom")
+		func(*db.ProdQueryBuilder, string, time.Time, time.Time) (string, []interface{}, error) {
+			return "", nil, errors.New("boom")
 		})
 
 	if rec.Code != http.StatusInternalServerError {
@@ -273,8 +273,8 @@ func TestModelsBuildError(t *testing.T) {
 	rec := httptest.NewRecorder()
 	Models(rec, graphRequest(
 		"/graph/api/models/1?startDate=2026-09-01&endDate=2026-09-30", "1"),
-		func(*db.ProdQueryBuilder, string, time.Time, time.Time) (string, error) {
-			return "", errors.New("boom")
+		func(*db.ProdQueryBuilder, string, time.Time, time.Time) (string, []interface{}, error) {
+			return "", nil, errors.New("boom")
 		})
 
 	if rec.Code != http.StatusInternalServerError {
@@ -282,6 +282,17 @@ func TestModelsBuildError(t *testing.T) {
 	}
 	if got := decodeError(t, rec).Code; got != "QUERY_ERROR" {
 		t.Errorf("error code = %q, want QUERY_ERROR", got)
+	}
+}
+
+func TestParseModels(t *testing.T) {
+	req := httptest.NewRequest(http.MethodGet, "/x?model=A,B&model=C&model=%20", nil)
+
+	got := parseModels(req)
+	want := []string{"A", "B", "C"}
+
+	if !reflect.DeepEqual(got, want) {
+		t.Fatalf("parseModels = %v, want %v", got, want)
 	}
 }
 
