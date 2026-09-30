@@ -57,7 +57,7 @@ func (qb *ProdQueryBuilder) BuildModelsQuery(lineID string, startDate, endDate t
 		whereClause = addCondition(whereClause, lineConfig.Param)
 	}
 
-	modelCond, modelArgs := qb.modelCondition(lineConfig.ParamModel)
+	modelCond, modelArgs := qb.modelFilter(lineConfig)
 	whereClause = addCondition(whereClause, modelCond)
 
 	whereClause = addCondition(whereClause,
@@ -104,7 +104,7 @@ func (qb *ProdQueryBuilder) buildAggregateQuery(lineID string, startDate, endDat
 		orderBy = "[month], model"
 	}
 
-	modelCond, modelArgs := qb.modelCondition(lineConfig.ParamModel)
+	modelCond, modelArgs := qb.modelFilter(lineConfig)
 
 	if lineConfig.QueryType == "gen5" {
 		// GEN5 expresses its line selector in param and aggregates OK/NOK.

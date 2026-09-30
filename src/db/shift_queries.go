@@ -82,16 +82,23 @@ func addCondition(whereClause, condition string) string {
 	return whereClause + " AND " + condition
 }
 
-// modelCondition substitutes the $modelFAssy placeholder in a config paramModel
-// fragment with a parameterized IN list built from the builder's models. It
-// returns an empty condition when there is nothing to filter. Values are
+// modelFilter builds a parameterized "<model column> in (@model0, ...)"
+// condition from the requested models, filtering on the line's configured
+// model column (ModelID, or Model for GEN5). It returns an empty condition
+// when no models were requested or the line has no model column. Values are
 // trimmed and bound as parameters (never concatenated) so the predicate stays
-// sargable and injection-safe.
-func (qb *ProdQueryBuilder) modelCondition(paramModel string) (string, []interface{}) {
-	paramModel = strings.TrimSpace(paramModel)
-	// Only fragments using the $modelFAssy placeholder are supported, and only
-	// when the request actually asked for models.
-	if paramModel == "" || !strings.Contains(paramModel, "$modelFAssy") || len(qb.models) == 0 {
+// sargable and injection-safe. The legacy $modelFAssy / paramModel mechanism
+// is intentionally ignored.
+func (qb *ProdQueryBuilder) modelFilter(lineConfig *ProdQueryConfig) (string, []interface{}) {
+	if len(qb.models) == 0 {
+		return "", nil
+	}
+
+	modelCol := lineConfig.ModelID
+	if lineConfig.QueryType == "gen5" {
+		modelCol = "Model"
+	}
+	if modelCol == "" {
 		return "", nil
 	}
 
@@ -102,16 +109,8 @@ func (qb *ProdQueryBuilder) modelCondition(paramModel string) (string, []interfa
 		holders = append(holders, "@"+name)
 		args = append(args, sql.Named(name, strings.TrimSpace(model)))
 	}
-	condition := strings.ReplaceAll(paramModel, "$modelFAssy", strings.Join(holders, ","))
 
-	// paramModel is a fragment like "AND col in (...) AND "; drop the leading
-	// and trailing connectors so addCondition can append it as one condition.
-	condition = strings.TrimSpace(condition)
-	if len(condition) >= 3 && strings.EqualFold(condition[len(condition)-3:], "and") {
-		condition = strings.TrimSpace(condition[:len(condition)-3])
-	}
-
-	return condition, args
+	return fmt.Sprintf("%s in (%s)", modelCol, strings.Join(holders, ",")), args
 }
 
 // trimmedModelExpr returns a SQL expression for a model column with leading and
@@ -217,7 +216,7 @@ func (qb *ProdQueryBuilder) BuildShiftQuery(
 	}
 
 	// Add the model filter (if models were requested).
-	modelCond, modelArgs := qb.modelCondition(lineConfig.ParamModel)
+	modelCond, modelArgs := qb.modelFilter(lineConfig)
 	whereClause = addCondition(whereClause, modelCond)
 
 	// Add param condition
@@ -339,7 +338,7 @@ func (qb *ProdQueryBuilder) BuildShiftQueryNOK(
 	}
 
 	// Add the model filter (if models were requested).
-	modelCond, modelArgs := qb.modelCondition(lineConfig.ParamModel)
+	modelCond, modelArgs := qb.modelFilter(lineConfig)
 	whereClause = addCondition(whereClause, modelCond)
 
 	// Add the NOK/line condition. Standard lines use paramRej for defects,

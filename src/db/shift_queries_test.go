@@ -272,6 +272,36 @@ func TestBuildShiftQueryNOKWithModels(t *testing.T) {
 	}
 }
 
+func TestBuildShiftQueryGen5WithModels(t *testing.T) {
+	qb := newTestBuilder(t, testConfig).WithModels([]string{"A", "B"})
+
+	query, args, err := qb.BuildShiftQuery("1107", testDate, Shift1)
+	if err != nil {
+		t.Fatalf("BuildShiftQuery: %v", err)
+	}
+	if !strings.Contains(query, "Model in (@model0,@model1)") {
+		t.Errorf("gen5 query should filter on the Model column:\n%s", query)
+	}
+	if len(args) != 2 {
+		t.Fatalf("got %d model args, want 2", len(args))
+	}
+}
+
+func TestBuildShiftQueryNoModelColumnSkipsFilter(t *testing.T) {
+	qb := newTestBuilder(t, testConfig).WithModels([]string{"A"})
+
+	query, args, err := qb.BuildShiftQuery("42", testDate, Shift1)
+	if err != nil {
+		t.Fatalf("BuildShiftQuery: %v", err)
+	}
+	if strings.Contains(query, "in (@model0)") {
+		t.Errorf("line without a model column should not be filtered:\n%s", query)
+	}
+	if len(args) != 0 {
+		t.Fatalf("got %d model args, want 0", len(args))
+	}
+}
+
 func TestBuildShiftQueryUnknownLine(t *testing.T) {
 	qb := newTestBuilder(t, testConfig)
 

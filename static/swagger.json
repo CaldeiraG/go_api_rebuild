@@ -1116,7 +1116,7 @@
       "Model": {
         "name": "model",
         "in": "query",
-        "description": "Optional model filter; repeatable and/or comma-separated. Applied where the line config defines a model filter.",
+        "description": "Optional model filter; repeatable and/or comma-separated. Applied as a parameterized IN list on the line's model column.",
         "required": false,
         "schema": {"type": "string"}
       }
