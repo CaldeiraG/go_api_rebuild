@@ -20,6 +20,10 @@ import (
 )
 
 func main() {
+	// Prevent a click/selection in the Windows console from blocking stdout
+	// writes (and therefore the server) until a keypress.
+	disableConsoleQuickEdit()
+
 	// Redoc Environment
 	// ================
 	doc := redoc.Redoc{
